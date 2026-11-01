@@ -1,0 +1,11 @@
+.godot/
+.DS_Store
+*.tmp
+tools/godot/
+tools/downloads/
+output/
+*.log
+*.zip
+node_modules/
+__pycache__/
+docs/*.import

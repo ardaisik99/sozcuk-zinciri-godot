@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=contain, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#fff8eb">
+  <meta name="description" content="Kelimeleri birbirine bağla. Türkçe kelime zinciri bulmacasını tek başına veya arkadaşlarınla aynı ekranda oyna.">
+  <title>Sözcük Zinciri</title>
+  <style>
+    :root { color-scheme: light; --app-height: 100dvh; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #fff8eb; }
+    body { font-family: "Trebuchet MS", Arial, sans-serif; color: #263657; overscroll-behavior: none; }
+    #canvas { display: block; width: 100% !important; height: var(--app-height) !important; outline: none; touch-action: none; }
+    #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 28px; background: #fff8eb; text-align: center; }
+    .tiles { display: flex; gap: 10px; transform: rotate(-7deg); }
+    .tile { display: grid; place-items: center; width: 66px; height: 74px; border: 3px solid #263657; border-radius: 17px; box-shadow: 0 6px 0 #263657; font-size: 40px; font-weight: 900; }
+    .tile:nth-child(1) { background: #ffc647; }
+    .tile:nth-child(2) { background: #fa714d; transform: translateY(-14px) rotate(12deg); color: white; }
+    .tile:nth-child(3) { background: #28aaa0; color: white; }
+    h1 { margin: 8px 0 0; max-width: 440px; font-size: clamp(30px, 8vw, 42px); font-weight: 900; letter-spacing: -1px; }
+    #loading p { margin: 0; font-size: 16px; line-height: 1.5; max-width: 390px; }
+    progress { width: min(280px, 80vw); height: 14px; border: 2px solid #263657; border-radius: 20px; overflow: hidden; background: #ece7dd; }
+    progress::-webkit-progress-bar { background: #ece7dd; }
+    progress::-webkit-progress-value { background: #28aaa0; border-radius: 12px; }
+    progress::-moz-progress-bar { background: #28aaa0; border-radius: 12px; }
+    #retry { padding: 12px 20px; border: 2px solid #263657; border-radius: 12px; background: #ffc647; color: #263657; font: inherit; font-weight: bold; cursor: pointer; }
+    [hidden] { display: none !important; }
+  </style>
+  <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+</head>
+<body>
+  <canvas id="canvas" tabindex="0" aria-label="Sözcük Zinciri oyunu">Bu oyun için güncel ve WebGL 2 destekleyen bir tarayıcı gerekiyor.</canvas>
+  <div id="loading" role="status" aria-live="polite">
+    <div class="tiles" aria-hidden="true"><span class="tile">S</span><span class="tile">Z</span><span class="tile">!</span></div>
+    <h1>Sözcük Zinciri</h1>
+    <p id="message">Kelimeler yerini alıyor…</p>
+    <progress id="progress" max="100"></progress>
+    <button id="retry" hidden onclick="location.reload()">Yeniden dene</button>
+  </div>
+  <noscript>Oyunu açmak için tarayıcında JavaScript'i etkinleştir.</noscript>
+  <script src="index.js"></script>
+  <script>
+    (() => {
+      const canvas = document.getElementById('canvas');
+      const overlay = document.getElementById('loading');
+      const progress = document.getElementById('progress');
+      const message = document.getElementById('message');
+      window.__zincirKeyboardInset = 0;
+      window.__zincirViewportHeight = window.innerHeight;
+      // Godot's adaptive policy measures innerHeight, which Safari may leave
+      // unchanged above its keyboard. Policy 0 lets this shell resize the real
+      // framebuffer rather than merely squeezing the canvas with CSS.
+      function fitViewport() {
+        const viewport = window.visualViewport;
+        const visibleHeight = viewport ? viewport.height : window.innerHeight;
+        window.__zincirKeyboardInset = Math.max(0, window.innerHeight - visibleHeight);
+        window.__zincirViewportHeight = visibleHeight;
+        document.documentElement.style.setProperty('--app-height', Math.round(visibleHeight) + 'px');
+        const pixelRatio = window.devicePixelRatio || 1;
+        const width = Math.max(1, Math.round(window.innerWidth * pixelRatio));
+        const height = Math.max(1, Math.round(visibleHeight * pixelRatio));
+        if (canvas.width !== width) canvas.width = width;
+        if (canvas.height !== height) canvas.height = height;
+      }
+      fitViewport();
+      window.addEventListener('resize', fitViewport);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', fitViewport);
+        window.visualViewport.addEventListener('scroll', fitViewport);
+      }
+      function failure(error) {
+        console.error(error);
+        message.textContent = location.protocol === 'file:'
+          ? 'Oyunu dosyaya çift tıklayarak açamazsın. tools/serve.ps1 ile yerel sunucuyu başlat.'
+          : 'Oyun yüklenemedi. İnternet bağlantını kontrol et ve WebGL 2 destekleyen güncel bir tarayıcıyla yeniden dene.';
+        progress.hidden = true;
+        document.getElementById('retry').hidden = false;
+      }
+      const missing = Engine.getMissingFeatures({ threads: false });
+      if (missing.length) {
+        failure(new Error(missing.join(', ')));
+        return;
+      }
+      const engine = new Engine({"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":588780,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+      engine.startGame({
+        canvas,
+        canvasResizePolicy: 0,
+        onProgress(current, total) {
+          if (total > 0) progress.value = current / total * 100;
+          else progress.removeAttribute('value');
+        }
+      }).then(() => {
+        overlay.remove();
+        fitViewport();
+      }).catch(failure);
+    })();
+  </script>
+</body>
+</html>
+
