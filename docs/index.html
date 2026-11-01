@@ -2,102 +2,439 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=contain, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#fff8eb">
-  <meta name="description" content="Kelimeleri birbirine bağla. Türkçe kelime zinciri bulmacasını tek başına veya arkadaşlarınla aynı ekranda oyna.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#fff8ee">
+  <meta name="description" content="Kelimeleri bağla, zinciri tamamla. Türkçe kelime bulmacası ve arkadaşlarınla parti modu.">
   <title>Sözcük Zinciri</title>
+  <link rel="icon" href="assets/icons/chain.svg" type="image/svg+xml">
   <style>
-    :root { color-scheme: light; --app-height: 100dvh; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #fff8eb; }
-    body { font-family: "Trebuchet MS", Arial, sans-serif; color: #263657; overscroll-behavior: none; }
-    #canvas { display: block; width: 100% !important; height: var(--app-height) !important; outline: none; touch-action: none; }
-    #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 28px; background: #fff8eb; text-align: center; }
-    .tiles { display: flex; gap: 10px; transform: rotate(-7deg); }
-    .tile { display: grid; place-items: center; width: 66px; height: 74px; border: 3px solid #263657; border-radius: 17px; box-shadow: 0 6px 0 #263657; font-size: 40px; font-weight: 900; }
-    .tile:nth-child(1) { background: #ffc647; }
-    .tile:nth-child(2) { background: #fa714d; transform: translateY(-14px) rotate(12deg); color: white; }
-    .tile:nth-child(3) { background: #28aaa0; color: white; }
-    h1 { margin: 8px 0 0; max-width: 440px; font-size: clamp(30px, 8vw, 42px); font-weight: 900; letter-spacing: -1px; }
-    #loading p { margin: 0; font-size: 16px; line-height: 1.5; max-width: 390px; }
-    progress { width: min(280px, 80vw); height: 14px; border: 2px solid #263657; border-radius: 20px; overflow: hidden; background: #ece7dd; }
-    progress::-webkit-progress-bar { background: #ece7dd; }
-    progress::-webkit-progress-value { background: #28aaa0; border-radius: 12px; }
-    progress::-moz-progress-bar { background: #28aaa0; border-radius: 12px; }
-    #retry { padding: 12px 20px; border: 2px solid #263657; border-radius: 12px; background: #ffc647; color: #263657; font: inherit; font-weight: bold; cursor: pointer; }
-    [hidden] { display: none !important; }
-  </style>
-  <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
-<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+@font-face{font-family:Baloo;src:url('assets/fonts/Baloo2.woff2') format('woff2');font-weight:800;font-display:swap}
+@font-face{font-family:Nunito;src:url('assets/fonts/Nunito.woff2') format('woff2');font-weight:800;font-display:swap}
+@font-face{font-family:Symbols;src:url('assets/fonts/Symbols.woff2') format('woff2');font-display:swap}
+:root{--ink:#29364f;--muted:#78808c;--cream:#fff8ee;--orange:#fb7852;--gold:#ffca51;--teal:#2ba99e;--mint:#d9eee7;--line:#e5ded2;--vvh:100svh;color-scheme:light;font-family:Nunito,ui-rounded,system-ui,sans-serif;color:var(--ink);background:var(--cream)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{scroll-padding-top:24px;scroll-padding-bottom:24px}body{margin:0;min-width:280px;min-height:100svh;background-image:radial-gradient(#e8dfd0 1px,transparent 1px);background-size:30px 30px}button,input{font:inherit}button{cursor:pointer;touch-action:manipulation}button:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:4px}button:disabled{cursor:default;opacity:.56}h1,h2,h3,p{margin:0}h1,h2,h3,.btn,.tag,.brand,.word-tile,.coins{font-family:Baloo,Symbols,ui-rounded,system-ui,sans-serif;font-weight:800}h1,h2,h3{line-height:1.12;overflow-wrap:anywhere}h1{font-size:clamp(32px,5vw,46px)}h2{font-size:28px}h3{font-size:23px}p{font-size:16px;line-height:1.55}small{font-size:13px}img{max-width:100%;display:block}.icon{width:28px;height:28px;object-fit:contain;flex:none}.muted{color:var(--muted)}.small{font-size:14px}.eyebrow{font-size:13px;letter-spacing:.035em;font-weight:900;color:var(--muted)}.stack{display:grid;gap:18px}.row{display:flex;align-items:center;gap:12px}.spread{justify-content:space-between}.grow{flex:1;min-width:0}.center{text-align:center}.hidden{display:none!important}#app{min-height:var(--vvh)}main{width:min(1080px,calc(100% - 40px));margin:0 auto;padding:24px 0 38px;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(38px,env(safe-area-inset-bottom))}main.narrow{max-width:560px}.topbar{display:flex;align-items:center;gap:12px;margin-bottom:28px;min-height:49px}.brand{font-size:20px;line-height:.95;text-transform:uppercase;letter-spacing:-.03em;display:flex;align-items:center;gap:12px;flex:1;min-width:0}.brand .icon{width:36px;height:36px}.bar-title{font-size:23px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.coins{display:flex;gap:7px;align-items:center;padding:9px 12px;border:1px solid #e8c66c;border-radius:15px;background:#fff0be;font-size:20px;white-space:nowrap}.coins .icon{width:24px;height:24px}.icon-btn{display:grid;place-items:center;width:47px;height:47px;flex:none;border:2px solid var(--ink);border-radius:15px;background:white;box-shadow:0 3px 0 var(--ink)}.icon-btn:active,.btn:active{transform:translateY(3px);box-shadow:none}.icon-btn .icon{width:26px;height:26px}.btn{border:2px solid var(--ink);border-radius:17px;background:var(--orange);color:var(--ink);padding:13px 18px;min-height:56px;font-size:21px;line-height:1.1;box-shadow:0 4px 0 var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:9px;text-align:center}.btn:hover{filter:brightness(1.035)}.btn.white{background:white}.btn.gold{background:var(--gold)}.btn.mint{background:var(--mint)}.btn.soft{background:var(--cream)}.btn.small{min-height:42px;font-size:16px;padding:9px 14px}.btn.full{width:100%}.btn .icon{width:24px;height:24px}.panel{border:1px solid var(--line);border-radius:22px;background:white;padding:20px}.outlined{border:2px solid var(--ink);box-shadow:0 4px 0 var(--ink)}.tag{display:inline-flex;align-items:center;background:var(--gold);padding:7px 11px;border-radius:10px;font-size:13px;line-height:1.2;width:fit-content}.tag.mint{background:var(--mint)}.hero{background:var(--mint);display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:20px;padding:24px}.hero h1{font-size:clamp(33px,4.8vw,51px);margin:14px 0}.hero p{max-width:390px;margin-bottom:22px}.hero-art{width:100%;max-width:420px;justify-self:center;aspect-ratio:512/341;object-fit:contain}.mini-chain{display:none}.journey .row{gap:10px}.journey .eyebrow{color:var(--ink)}.progress{height:9px;border-radius:99px;background:#e8e6df;overflow:hidden;margin:14px 0}.progress>i{display:block;height:100%;background:var(--teal);border-radius:99px}.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.mode-card{display:grid;align-content:start;gap:13px}.mode-card.party{background:#ffe2c5}.mode-card.explore{background:#e3def0}.mode-card.online{background:#ece9e3}.mode-card .btn{margin-top:auto}.footnote{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:14px}.profile{padding-top:40px;max-width:450px!important}.profile .hero-art{width:230px;max-height:160px;margin:0 auto 14px}.profile h1{font-size:36px}.name-input{width:100%;min-height:63px;border:2px solid var(--ink);border-radius:15px;background:white;padding:13px 18px;font-size:24px;color:var(--ink);outline:none}.name-input:focus{border:3px solid var(--teal);padding:12px 17px}.name-input::placeholder{color:#b7b6b2}.profile .coin-note{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:16px}.tabs{display:flex;flex-wrap:wrap;gap:11px}.tabs .btn{font-size:16px;min-height:44px}.level-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.level-card{display:grid;gap:14px}.level-card.locked{background:#f0ece3}.level-card.done{background:#e1f1e9}.level-card h3{font-size:24px}.level-card .category{font-size:12px;color:var(--muted);text-transform:uppercase}.level-card .btn{font-size:15px;min-height:46px}.game-top{display:grid;gap:16px;margin-bottom:20px}.game-top h1{font-size:32px}.game-top .progress{margin:0}.tutorial-tip{background:#fff0c9;border-color:#ecd9a8;font-size:16px;line-height:1.5}.chain{display:grid;gap:10px}.connector{display:flex;align-items:center;gap:8px;min-height:20px;color:var(--muted);font-size:13px;padding-left:4px}.connector .icon{width:17px;height:17px}.connector.done{color:#278d7e}.word-row{border:1px solid var(--line);border-radius:19px;background:#f2efe7;padding:14px 17px;min-width:0}.word-row[data-mode=solved]{background:#e1f1e9;border-color:#c8ded3}.word-row[data-mode=active]{border:2px solid var(--ink);background:white;box-shadow:0 4px 0 var(--ink)}.word-meta{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:900;color:var(--muted);margin-bottom:10px;letter-spacing:.025em}.word-meta .status{margin-left:auto}.word-meta .icon{width:19px;height:19px}.word-row[data-mode=active] .word-meta{color:#ec6d49}.word-row[data-mode=solved] .word-meta{color:#249d90}.letter-entry{position:relative;isolation:isolate;min-width:0}.letter-cells{display:grid;grid-template-columns:repeat(var(--letters),minmax(0,1fr));gap:5px;pointer-events:none}.word-tile{display:flex;align-items:center;justify-content:center;min-width:0;height:47px;border-radius:8px;background:#ebe6dc;font-size:clamp(20px,5.8vw,31px);line-height:1.1;color:#bfb8ab}.word-tile.fixed,.word-tile.typed{color:var(--ink)}.word-row[data-mode=active] .word-tile{background:#f6f1e8}.word-row[data-mode=solved] .word-tile{background:#c4e4d6;color:var(--ink)}.word-row:not([data-mode=solved]) .word-tile:first-child{background:#f2c75f}.word-input{position:absolute;z-index:2;inset:0;width:100%;height:100%;font-size:24px;border:0;outline:0;background:transparent;color:transparent;caret-color:transparent;border-radius:8px;padding:0;user-select:text;-webkit-text-fill-color:transparent}.word-input::selection{background:transparent;color:transparent}.letter-entry:focus-within{outline:2px solid var(--teal);outline-offset:2px;border-radius:8px}.active-group{display:grid;gap:13px;scroll-margin-top:18px;scroll-margin-bottom:24px}.feedback{font-size:14px;color:var(--muted);min-height:21px}.feedback.error{color:#b34f3d}.joker-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.joker-row .btn{font-size:18px;padding:12px 8px;min-height:51px}.hint-box{padding:14px 17px;border-radius:15px;background:#fff0c9;font-size:16px;line-height:1.5}.game-footer{margin-top:18px;color:var(--muted);font-size:13px}.shake{animation:shake .24s linear}.win{text-align:center;max-width:510px!important}.win .trophy{width:85px;height:85px;margin:10px auto 0}.win .tag{margin:auto}.win h1{font-size:37px}.win .summary{text-align:left;background:var(--mint);display:grid;gap:8px}.summary h3{font-size:26px}.summary p{font-size:14px;color:#278d7e;margin-bottom:8px}.rewards{display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:Baloo,Symbols,system-ui,sans-serif;font-size:25px}.rewards .row{gap:8px}.rewards .score{color:#239b8e}.party-chain{background:#ffe6ce;display:grid;gap:11px}.party-chain .btn{font-size:28px;background:white}.party-chain .party-link{text-align:center;font-size:15px}.settings-card{background:var(--mint)}.settings-card h1{font-size:34px}.settings-stack .btn{font-size:19px}.rules{line-height:1.65}.rules strong{color:var(--ink)}.offline-badge{font-size:12px;font-family:Nunito,system-ui,sans-serif;color:var(--muted)}#toast{position:fixed;z-index:20;left:50%;transform:translate(-50%,-130%);top:max(14px,env(safe-area-inset-top));width:min(500px,calc(100% - 32px));padding:15px 18px;border:2px solid var(--ink);border-radius:15px;background:#fff0c9;color:var(--ink);box-shadow:0 4px 0 var(--ink);font-size:16px;line-height:1.4;pointer-events:none;opacity:0;transition:transform .18s ease,opacity .18s ease}#toast.visible{opacity:1;transform:translate(-50%,0)}#toast.success{background:var(--mint)}.boot{min-height:85svh;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;text-align:center}.boot-tiles{display:flex;gap:8px;transform:rotate(-6deg);margin:20px}.boot-tiles b{border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);background:var(--gold);border-radius:15px;width:62px;height:68px;display:grid;place-items:center;font:900 36px ui-rounded,system-ui,sans-serif}.boot-tiles b:nth-child(2){background:var(--orange);transform:translateY(-10px) rotate(12deg)}.boot-tiles b:nth-child(3){background:var(--teal);color:white}body.is-typing main{padding-bottom:max(60px,var(--keyboard-inset,0px))}body.is-typing .active-group{scroll-margin-bottom:20px}@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}@media(min-width:760px){main{width:min(1080px,calc(100% - 72px));padding-top:28px}.hero .hero-art{width:100%}.welcome h2{font-size:26px}.game-top h1{font-size:34px}}
+@media(max-width:759px){.mode-grid{grid-template-columns:1fr}.hero{grid-template-columns:1fr;padding:19px;gap:0}.hero h1{font-size:35px;line-height:1.15;margin:13px 0}.hero p{margin-bottom:14px;font-size:16px}.hero>.hero-art{display:none}.mini-chain{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:5px 0 15px}.mini-chain .hero-art{width:128px;height:85px;aspect-ratio:auto}.mini-chain p{font-size:12px;margin:5px 0 0}.mini-chain .tag{background:#fff5da;font-size:13px}.level-grid{grid-template-columns:1fr}.welcome h2{font-size:25px}.welcome p{font-size:14px}.stack{gap:19px}.topbar{margin-bottom:26px}.hero .btn{font-size:21px}.journey{padding:17px}.mode-card .row .icon{width:34px;height:34px}.mode-card{gap:11px}.mode-card p br{display:none}.game-top h1{font-size:30px}.profile h1{font-size:34px}.profile{padding-top:25px}.profile .hero-art{height:145px}.win h1{font-size:33px}}
+@media(max-width:359px){main{width:calc(100% - 28px)}.topbar{gap:8px}.brand{font-size:18px;gap:8px}.brand .icon{width:30px;height:30px}.coins{font-size:18px;padding:8px}.hero h1{font-size:30px}.hero .tag{font-size:11px}.hero p{font-size:14px}.mini-chain .hero-art{width:94px;height:71px}.mini-chain .tag{font-size:11px}.btn{font-size:18px}.word-row{padding:13px}.joker-row{gap:9px}.joker-row .btn{font-size:15px}.joker-row .icon{width:20px;height:20px}.rewards{font-size:22px}.bar-title{font-size:20px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
+</style>
 </head>
 <body>
-  <canvas id="canvas" tabindex="0" aria-label="Sözcük Zinciri oyunu">Bu oyun için güncel ve WebGL 2 destekleyen bir tarayıcı gerekiyor.</canvas>
-  <div id="loading" role="status" aria-live="polite">
-    <div class="tiles" aria-hidden="true"><span class="tile">S</span><span class="tile">Z</span><span class="tile">!</span></div>
-    <h1>Sözcük Zinciri</h1>
-    <p id="message">Kelimeler yerini alıyor…</p>
-    <progress id="progress" max="100"></progress>
-    <button id="retry" hidden onclick="location.reload()">Yeniden dene</button>
-  </div>
-  <noscript>Oyunu açmak için tarayıcında JavaScript'i etkinleştir.</noscript>
-  <script src="index.js"></script>
-  <script>
-    (() => {
-      const canvas = document.getElementById('canvas');
-      const overlay = document.getElementById('loading');
-      const progress = document.getElementById('progress');
-      const message = document.getElementById('message');
-      window.__zincirKeyboardInset = 0;
-      window.__zincirViewportHeight = window.innerHeight;
-      // Godot's adaptive policy measures innerHeight, which Safari may leave
-      // unchanged above its keyboard. Policy 0 lets this shell resize the real
-      // framebuffer rather than merely squeezing the canvas with CSS.
-      function fitViewport() {
-        const viewport = window.visualViewport;
-        const visibleHeight = viewport ? viewport.height : window.innerHeight;
-        window.__zincirKeyboardInset = Math.max(0, window.innerHeight - visibleHeight);
-        window.__zincirViewportHeight = visibleHeight;
-        document.documentElement.style.setProperty('--app-height', Math.round(visibleHeight) + 'px');
-        const pixelRatio = window.devicePixelRatio || 1;
-        const width = Math.max(1, Math.round(window.innerWidth * pixelRatio));
-        const height = Math.max(1, Math.round(visibleHeight * pixelRatio));
-        if (canvas.width !== width) canvas.width = width;
-        if (canvas.height !== height) canvas.height = height;
+  <div id="app"><main class="boot" data-screen="loading"><div class="boot-tiles" aria-hidden="true"><b>S</b><b>Z</b><b>!</b></div><h1>Sözcük Zinciri</h1><p>Kelimeler yerini alıyor…</p></main></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript>Bu oyunu oynamak için JavaScript'i etkinleştir.</noscript>
+  <script id="game-content" type="application/json">{"version":1,"tutorial":{"id":"tutorial","category":"Öğretici","title":"İlk zincirin","words":["ÇAY","KAŞIK","OYUN","HAVA"],"definitions":["Demlenerek hazırlanan sıcak içecek.","Yemek yerken veya karıştırırken kullanılan saplı mutfak aracı.","Kuralları olan, eğlenmek için yapılan etkinlik.","Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu."],"links":["Çay kaşığı","Kaşık oyunu","Oyun havası"]},"levels":[{"id":"mutfak_01","category":"Mutfak","title":"Kahve molası","words":["KAHVE","FİNCAN","TAKIM","ÇANTA"],"definitions":["Kavrulmuş çekirdeklerden hazırlanan aromalı içecek.","Sıcak içecekler için kullanılan küçük, kulplu kap.","Birlikte kullanılan nesneler veya birlikte çalışan kişiler topluluğu.","Eşya taşımak için kullanılan, saplı ya da askılı kap."],"links":["Kahve fincanı","Fincan takımı","Takım çantası"]},{"id":"mutfak_02","category":"Mutfak","title":"Fırından yeni çıktı","words":["EKMEK","FIRIN","KAPI","KOL","SAAT"],"definitions":["Un, su ve mayayla hazırlanan temel besin.","Yiyecekleri yüksek sıcaklıkta pişiren araç veya iş yeri.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça.","Zamanı ölçen ve gösteren araç."],"links":["Ekmek fırını","Fırın kapısı","Kapı kolu","Kol saati"]},{"id":"mutfak_03","category":"Mutfak","title":"Sofra zamanı","words":["YEMEK","MASA","ÖRTÜ","DESEN"],"definitions":["Beslenmek için hazırlanan yiyecek.","Üzerinde yemek yenilen veya çalışılan ayaklı eşya.","Bir şeyi korumak veya süslemek için üzerine serilen kumaş.","Bir yüzeyi süsleyen çizgi, şekil ve renk düzeni."],"links":["Yemek masası","Masa örtüsü","Örtü deseni"]},{"id":"mutfak_04","category":"Mutfak","title":"Bir bardak ferahlık","words":["MEYVE","SU","BARDAK","ALTLIK"],"definitions":["Bitkilerin çoğunlukla tatlı ve yenilebilir ürünü.","Yaşam için gerekli, renksiz ve kokusuz sıvı.","İçecek içmek için kullanılan kulpsuz kap.","Bir nesnenin altına konan koruyucu parça."],"links":["Meyve suyu","Su bardağı","Bardak altlığı"]},{"id":"mutfak_05","category":"Mutfak","title":"Kahvaltı hazırlığı","words":["SÜT","ŞİŞE","KAPAK","RESİM","ÇERÇEVE"],"definitions":["Memelilerin yavrularını beslediği beyaz sıvı.","Genellikle dar ağızlı, sıvı saklamaya yarayan kap.","Bir kabın ağzını veya bir nesnenin yüzünü örten parça.","Çizgi ve renklerle oluşturulan görüntü.","Bir resmi veya aynayı çevreleyen kenarlık."],"links":["Süt şişesi","Şişe kapağı","Kapak resmi","Resim çerçevesi"]},{"id":"mutfak_06","category":"Mutfak","title":"Sıcak bir başlangıç","words":["BALIK","ÇORBA","KAŞIK","OYUN"],"definitions":["Suda yaşayan, solungaçla soluyan omurgalı hayvan.","Çeşitli malzemelerle hazırlanan sulu yemek.","Yemek yerken veya karıştırırken kullanılan saplı mutfak aracı.","Kuralları olan, eğlenmek için yapılan etkinlik."],"links":["Balık çorbası","Çorba kaşığı","Kaşık oyunu"]},{"id":"mutfak_07","category":"Mutfak","title":"Mutfak köşesi","words":["MUTFAK","DOLAP","KAPAK","RESİM"],"definitions":["Yemeklerin hazırlandığı bölüm.","Eşyaları saklamak için kullanılan raflı, kapaklı mobilya.","Bir kabın ağzını veya bir nesnenin yüzünü örten parça.","Çizgi ve renklerle oluşturulan görüntü."],"links":["Mutfak dolabı","Dolap kapağı","Kapak resmi"]},{"id":"mutfak_08","category":"Mutfak","title":"Tatlı bir zincir","words":["TATLI","KAŞIK","OYUN","HAVA"],"definitions":["Şekerli yiyeceklerin genel adı.","Yemek yerken veya karıştırırken kullanılan saplı mutfak aracı.","Kuralları olan, eğlenmek için yapılan etkinlik.","Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu."],"links":["Tatlı kaşığı","Kaşık oyunu","Oyun havası"]},{"id":"spor_01","category":"Spor","title":"Sahadan perdeye","words":["FUTBOL","SAHA","ÇİZGİ","FİLM"],"definitions":["İki takımın topu rakip kaleye atmaya çalıştığı spor.","Spor karşılaşması veya belirli bir iş için ayrılmış alan.","Bir yüzey üzerindeki uzun, ince iz.","Hareketli görüntülerden oluşan sinema eseri."],"links":["Futbol sahası","Saha çizgisi","Çizgi film"]},{"id":"spor_02","category":"Spor","title":"Potaya doğru","words":["BASKETBOL","TOP","SEPET","ÖRGÜ"],"definitions":["Topun yüksek bir çemberden geçirilmeye çalışıldığı takım sporu.","Oyun ve sporlarda kullanılan, çoğunlukla yuvarlak nesne.","Genellikle örülerek yapılan, eşya taşımaya yarayan kap.","İplik veya benzeri malzemeler birbirine geçirilerek yapılan iş."],"links":["Basketbol topu","Top sepeti","Sepet örgüsü"]},{"id":"spor_03","category":"Spor","title":"İlk adım","words":["SPOR","AYAKKABI","BAĞCIK","UÇ"],"definitions":["Bedeni geliştirmek için yapılan kurallı hareket ve yarışmalar.","Ayağı dış etkenlerden koruyan giyecek.","Ayakkabı gibi eşyaları bağlamak için kullanılan ince şerit veya ip.","Bir şeyin son veya en dış noktası."],"links":["Spor ayakkabısı","Ayakkabı bağcığı","Bağcık ucu"]},{"id":"spor_04","category":"Spor","title":"Kortta buluşalım","words":["TENİS","KORT","KAPI","KOL"],"definitions":["Raketle topun bir ağ üzerinden karşıya gönderildiği spor.","Tenis oynanan, çizgilerle sınırlandırılmış saha.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."],"links":["Tenis kortu","Kort kapısı","Kapı kolu"]},{"id":"spor_05","category":"Spor","title":"Suyla yarış","words":["YÜZME","HAVUZ","SU","SAAT"],"definitions":["Suda kollar ve bacaklarla ilerleme etkinliği.","İçinde su biriktirilen, yüzmeye de uygun yapay yapı.","Yaşam için gerekli, renksiz ve kokusuz sıvı.","Zamanı ölçen ve gösteren araç."],"links":["Yüzme havuzu","Havuz suyu","Su saati"]},{"id":"spor_06","category":"Spor","title":"Hedefe bir vuruş","words":["GOLF","TOP","OYUN","KURAL"],"definitions":["Küçük bir topun sopalarla belirli deliklere sokulduğu spor.","Oyun ve sporlarda kullanılan, çoğunlukla yuvarlak nesne.","Kuralları olan, eğlenmek için yapılan etkinlik.","Bir işte veya oyunda uyulması gereken ilke."],"links":["Golf topu","Top oyunu","Oyun kuralı"]},{"id":"spor_07","category":"Spor","title":"Takım ruhu","words":["FUTBOL","TAKIM","OYUN","HAVA"],"definitions":["İki takımın topu rakip kaleye atmaya çalıştığı spor.","Birlikte kullanılan nesneler veya birlikte çalışan kişiler topluluğu.","Kuralları olan, eğlenmek için yapılan etkinlik.","Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu."],"links":["Futbol takımı","Takım oyunu","Oyun havası"]},{"id":"spor_08","category":"Spor","title":"Antrenman çantası","words":["SPOR","ÇANTA","ASKI","KANCA"],"definitions":["Bedeni geliştirmek için yapılan kurallı hareket ve yarışmalar.","Eşya taşımak için kullanılan, saplı ya da askılı kap.","Eşyanın asılmasına ya da omuzda taşınmasına yarayan parça.","Bir şeyi tutmaya veya asmaya yarayan eğri uçlu parça."],"links":["Spor çantası","Çanta askısı","Askı kancası"]},{"id":"yasam_01","category":"Günlük Yaşam","title":"Evden çıkarken","words":["EV","KAPI","KOL","SAAT"],"definitions":["İnsanların yaşadığı konut.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça.","Zamanı ölçen ve gösteren araç."],"links":["Ev kapısı","Kapı kolu","Kol saati"]},{"id":"yasam_02","category":"Günlük Yaşam","title":"Zamanın izinde","words":["DUVAR","SAAT","KULE","KAPI"],"definitions":["Bir yapıyı sınırlayan veya bölümlere ayıran dik yüzey.","Zamanı ölçen ve gösteren araç.","Çevresindeki yapılardan belirgin biçimde yüksek yapı.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm."],"links":["Duvar saati","Saat kulesi","Kule kapısı"]},{"id":"yasam_03","category":"Günlük Yaşam","title":"Okul yolu","words":["OKUL","ÇANTA","CEP","TELEFON"],"definitions":["Eğitim ve öğretim yapılan yer.","Eşya taşımak için kullanılan, saplı ya da askılı kap.","Giyecek veya çantalarda küçük eşyaları koymaya yarayan bölüm.","Uzaktaki kişilerle iletişim kurmayı sağlayan cihaz."],"links":["Okul çantası","Çanta cebi","Cep telefonu"]},{"id":"yasam_04","category":"Günlük Yaşam","title":"Sabah rutini","words":["DİŞ","FIRÇA","KIL","KÖK"],"definitions":["Ağızda besinleri kesip çiğnemeye yarayan sert yapı.","Bir yüzeyi temizlemeye veya boyamaya yarayan kıllı araç.","Bazı canlıların derisinde çıkan ince, sert uzantı.","Bir bitkiyi toprağa bağlayan bölüm; bir yapının başlangıç kısmı."],"links":["Diş fırçası","Fırça kılı","Kıl kökü"]},{"id":"yasam_05","category":"Günlük Yaşam","title":"Yanına al","words":["EL","ÇANTA","ASKI","KANCA"],"definitions":["Kolun, tutmaya ve dokunmaya yarayan son bölümü.","Eşya taşımak için kullanılan, saplı ya da askılı kap.","Eşyanın asılmasına ya da omuzda taşınmasına yarayan parça.","Bir şeyi tutmaya veya asmaya yarayan eğri uçlu parça."],"links":["El çantası","Çanta askısı","Askı kancası"]},{"id":"yasam_06","category":"Günlük Yaşam","title":"Kapıda kim var?","words":["KAPI","ZİL","SES","KAYIT"],"definitions":["Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Vurulduğunda veya çalıştırıldığında ses çıkaran uyarı aracı.","Kulağın algıladığı titreşim.","Bilginin daha sonra kullanılmak üzere saklanması."],"links":["Kapı zili","Zil sesi","Ses kaydı"]},{"id":"yasam_07","category":"Günlük Yaşam","title":"İyi geceler","words":["YATAK","ODA","KAPI","KOL","SAAT"],"definitions":["Uyumak veya dinlenmek için kullanılan eşya.","Bir evin duvarlarla ayrılmış bölümlerinden biri.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça.","Zamanı ölçen ve gösteren araç."],"links":["Yatak odası","Oda kapısı","Kapı kolu","Kol saati"]},{"id":"yasam_08","category":"Günlük Yaşam","title":"Bir fikir yandı","words":["MASA","LAMBA","IŞIK","HIZ"],"definitions":["Üzerinde yemek yenilen veya çalışılan ayaklı eşya.","Bulunduğu yeri aydınlatan araç.","Cisimleri görmemizi sağlayan enerji.","Bir hareketin birim zamanda aldığı yol."],"links":["Masa lambası","Lamba ışığı","Işık hızı"]},{"id":"doga_01","category":"Doğa","title":"Yağmurdan sonra","words":["YAĞMUR","SU","BARDAK","ALTLIK"],"definitions":["Bulutlardan yeryüzüne düşen su damlaları.","Yaşam için gerekli, renksiz ve kokusuz sıvı.","İçecek içmek için kullanılan kulpsuz kap.","Bir nesnenin altına konan koruyucu parça."],"links":["Yağmur suyu","Su bardağı","Bardak altlığı"]},{"id":"doga_02","category":"Doğa","title":"Ormanda yürüyüş","words":["ORMAN","YOL","KENAR","TAŞ"],"definitions":["Geniş bir alanı kaplayan ağaç topluluğu.","Bir yerden başka bir yere gitmek için kullanılan geçit.","Bir yüzeyin, alanın veya nesnenin dış sınırı.","Yerin yapısını oluşturan sert mineral parçası."],"links":["Orman yolu","Yol kenarı","Kenar taşı"]},{"id":"doga_03","category":"Doğa","title":"Kıyı boyunca","words":["DENİZ","SU","KENAR","ÇİZGİ"],"definitions":["Yeryüzündeki büyük tuzlu su kütlesi.","Yaşam için gerekli, renksiz ve kokusuz sıvı.","Bir yüzeyin, alanın veya nesnenin dış sınırı.","Bir yüzey üzerindeki uzun, ince iz."],"links":["Deniz suyu","Su kenarı","Kenar çizgisi"]},{"id":"doga_04","category":"Doğa","title":"Yeşilin dokusu","words":["ÇAM","AĞAÇ","KABUK","RENK"],"definitions":["İğne yapraklı, reçineli ve genellikle her mevsim yeşil ağaç.","Odunsu gövdesi, dalları ve yaprakları olan bitki.","Bir canlıyı veya nesneyi dıştan örten koruyucu katman.","Işığın cisimlerden yansımasıyla gözde oluşan algı."],"links":["Çam ağacı","Ağaç kabuğu","Kabuk rengi"]},{"id":"doga_05","category":"Doğa","title":"Gül bahçesi","words":["GÜL","BAHÇE","KAPI","KOL"],"definitions":["Güzel kokulu, çoğunlukla dikenli dalları olan çiçek.","Çiçek, sebze veya ağaç yetiştirilen çevrili alan.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."],"links":["Gül bahçesi","Bahçe kapısı","Kapı kolu"]},{"id":"doga_06","category":"Doğa","title":"Dağlardan sofraya","words":["DAĞ","KEÇİ","SÜT","ŞİŞE"],"definitions":["Çevresindeki araziden çok yüksek olan yer şekli.","Sütünden ve kıllarından yararlanılan, çevik bir evcil hayvan.","Memelilerin yavrularını beslediği beyaz sıvı.","Genellikle dar ağızlı, sıvı saklamaya yarayan kap."],"links":["Dağ keçisi","Keçi sütü","Süt şişesi"]},{"id":"doga_07","category":"Doğa","title":"Doğal kaynak","words":["GÜNEŞ","IŞIK","KAYNAK","SU"],"definitions":["Dünya'ya ısı ve ışık veren yıldız.","Cisimleri görmemizi sağlayan enerji.","Bir şeyin çıktığı yer; yer altı suyunun yeryüzüne çıktığı nokta.","Yaşam için gerekli, renksiz ve kokusuz sıvı."],"links":["Güneş ışığı","Işık kaynağı","Kaynak suyu"]},{"id":"doga_08","category":"Doğa","title":"Yaprağın yolu","words":["YAPRAK","DAMAR","YOL","HARİTA"],"definitions":["Bitkilerin genellikle yeşil, yassı ve ince bölümü.","Canlılarda sıvı taşıyan ince kanalların genel adı.","Bir yerden başka bir yere gitmek için kullanılan geçit.","Bir yerin belirli ölçekte küçültülmüş çizimi."],"links":["Yaprak damarı","Damar yolu","Yol haritası"]},{"id":"kultur_01","category":"Kültür","title":"Bir kitabın yüzü","words":["KİTAP","KAPAK","RESİM","SERGİ"],"definitions":["Bir araya getirilmiş yazılı veya basılı sayfalar bütünü.","Bir kabın ağzını veya bir nesnenin yüzünü örten parça.","Çizgi ve renklerle oluşturulan görüntü.","Sanat eserlerinin veya ürünlerin görülmek üzere sunulduğu etkinlik."],"links":["Kitap kapağı","Kapak resmi","Resim sergisi"]},{"id":"kultur_02","category":"Kültür","title":"Sanata açılan kapı","words":["SANAT","GALERİ","KAPI","KOL"],"definitions":["Duygu ve düşünceleri estetik yollarla anlatan üretim alanı.","Sanat eserlerinin sergilendiği mekân.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."],"links":["Sanat galerisi","Galeri kapısı","Kapı kolu"]},{"id":"kultur_03","category":"Kültür","title":"Perde açılıyor","words":["SİNEMA","SALON","KAPI","KOL"],"definitions":["Hareketli görüntülerle öykü anlatan sanat; film izlenen yer.","Toplantı, gösteri veya konuk ağırlamak için kullanılan geniş oda.","Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.","Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."],"links":["Sinema salonu","Salon kapısı","Kapı kolu"]},{"id":"kultur_04","category":"Kültür","title":"Sahneden satırlara","words":["TİYATRO","OYUN","YAZAR","EV"],"definitions":["Oyuncuların sahnede canlandırdığı gösteri sanatı.","Kuralları olan, eğlenmek için yapılan etkinlik.","Kitap, öykü veya oyun gibi metinleri kaleme alan kişi.","İnsanların yaşadığı konut."],"links":["Tiyatro oyunu","Oyun yazarı","Yazar evi"]},{"id":"kultur_05","category":"Kültür","title":"Bir melodi","words":["MÜZİK","ALET","KUTU","KAPAK"],"definitions":["Seslerin ritim ve düzen içinde bir araya getirildiği sanat.","Bir işi yapmaya yarayan araç.","Çeşitli eşyaları koymak için kullanılan kapalı kap.","Bir kabın ağzını veya bir nesnenin yüzünü örten parça."],"links":["Müzik aleti","Alet kutusu","Kutu kapağı"]},{"id":"kultur_06","category":"Kültür","title":"Ritmi yakala","words":["HALK","OYUN","HAVA","DURUM"],"definitions":["Bir ülkede veya bölgede yaşayan insan topluluğu.","Kuralları olan, eğlenmek için yapılan etkinlik.","Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu.","Bir şeyin belli bir andaki hâli."],"links":["Halk oyunu","Oyun havası","Hava durumu"]},{"id":"kultur_07","category":"Kültür","title":"Dizelerin arasında","words":["ŞİİR","KİTAP","KAPAK","RESİM"],"definitions":["Duygu ve düşüncelerin ritim ve yoğun bir anlatımla aktarıldığı tür.","Bir araya getirilmiş yazılı veya basılı sayfalar bütünü.","Bir kabın ağzını veya bir nesnenin yüzünü örten parça.","Çizgi ve renklerle oluşturulan görüntü."],"links":["Şiir kitabı","Kitap kapağı","Kapak resmi"]},{"id":"kultur_08","category":"Kültür","title":"Öykülerin buluşması","words":["ÖYKÜ","KİTAP","FUAR","ALAN"],"definitions":["Yaşanmış veya tasarlanmış olayları anlatan kısa edebî eser.","Bir araya getirilmiş yazılı veya basılı sayfalar bütünü.","Ürünlerin veya yayınların tanıtıldığı büyük sergi ve buluşma.","Belirli bir iş veya etkinlik için ayrılmış geniş yer."],"links":["Öykü kitabı","Kitap fuarı","Fuar alanı"]}]}</script>
+<script type="module">
+// The lightweight web edition uses the same content and economy as Godot.
+const START_GOLD = 100;
+const LETTER_COST = 20;
+const HINT_COST = 15;
+const LEVEL_GOLD = 40;
+const LEVEL_SCORE = 100;
+const SAVE_KEY = 'sozcuk_zinciri_v1';
+
+function normalizeTurkish(value) {
+  return String(value ?? '').trim().replaceAll('i', 'İ').replaceAll('ı', 'I')
+    .toLocaleUpperCase('tr-TR').replace(/\s+/gu, '');
+}
+
+const clone = value => JSON.parse(JSON.stringify(value));
+const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const integer = (value, fallback = 0, max = 99999999) => {
+  const number = typeof value === 'number' ? value : typeof value === 'string' && /^-?\d+$/.test(value) ? Number(value) : NaN;
+  return Number.isFinite(number) ? Math.max(0, Math.min(max, Math.trunc(number))) : fallback;
+};
+const storageDefault = () => { try { return globalThis.localStorage ?? null; } catch { return null; } };
+const validLevel = level => object(level) && typeof level.id === 'string' && level.id
+  && Array.isArray(level.words) && level.words.length >= 4 && level.words.length <= 5
+  && level.words.every(word => typeof word === 'string' && word && normalizeTurkish(word) === word)
+  && Array.isArray(level.definitions) && level.definitions.length === level.words.length
+  && Array.isArray(level.links) && level.links.length === level.words.length - 1;
+
+class ZincirState {
+  static START_GOLD = START_GOLD;
+  static LETTER_COST = LETTER_COST;
+  static HINT_COST = HINT_COST;
+  static LEVEL_GOLD = LEVEL_GOLD;
+  static LEVEL_SCORE = LEVEL_SCORE;
+
+  constructor(content, storage = storageDefault()) {
+    this.storage = storage;
+    this.levels = (Array.isArray(content?.levels) ? content.levels : []).filter(validLevel).map(clone);
+    this.tutorial = validLevel(content?.tutorial) ? clone(content.tutorial) : {};
+    this.lastSaveOk = true;
+    this._defaults();
+    this.loadLocal();
+  }
+
+  _defaults() {
+    this.profileName = '';
+    this.gold = START_GOLD;
+    this.score = 0;
+    this.completed = [];
+    this.tutorialDone = false;
+    this.settings = { sound: true, haptics: true };
+    this.progress = {};
+    this.currentLevel = {};
+    this.activeIndex = 1;
+    this.revealed = {};
+    this.hintUsed = {};
+  }
+
+  setProfile(value) {
+    const name = String(value ?? '').trim();
+    if (name.length < 2 || name.length > 18 || /[\u0000-\u001f\u007f]/u.test(name)) return false;
+    this.profileName = name;
+    this.saveLocal();
+    return true;
+  }
+
+  findLevel(id) {
+    return id === 'tutorial' ? this.tutorial : this.levels.find(level => level.id === id) ?? {};
+  }
+
+  beginLevel(id) {
+    const level = this.findLevel(id);
+    if (!level?.words) return false;
+    this.currentLevel = clone(level);
+    this.activeIndex = 1;
+    this.revealed = {};
+    this.hintUsed = {};
+    const entry = this.progress[id];
+    if (object(entry) && entry.activeIndex >= 1 && entry.activeIndex < level.words.length) {
+      this.activeIndex = entry.activeIndex;
+      this.revealed = clone(entry.revealed ?? {});
+      this.hintUsed = clone(entry.hintUsed ?? {});
+    }
+    this.saveLocal();
+    return true;
+  }
+
+  isComplete() {
+    return Boolean(this.currentLevel.words && this.activeIndex >= this.currentLevel.words.length);
+  }
+
+  currentWord() {
+    return this.currentLevel.words?.[this.activeIndex] ?? '';
+  }
+
+  currentDefinition() {
+    return this.currentLevel.definitions?.[this.activeIndex] ?? '';
+  }
+
+  visibleLetters(wordIndex = -1) {
+    const index = wordIndex < 0 ? this.activeIndex : wordIndex;
+    const word = this.currentLevel.words?.[index];
+    if (!word) return [];
+    const positions = this.revealed[String(index)] ?? [];
+    return [...word].map((letter, position) => index < this.activeIndex || position === 0 || positions.includes(position) ? letter : '');
+  }
+
+  submitGuess(value) {
+    if (!this.currentLevel.words || this.isComplete()) return { ok: false, complete: this.isComplete(), reason: 'inactive', rewardGold: 0, rewardScore: 0 };
+    const word = this.currentWord();
+    const guess = normalizeTurkish(value);
+    const shown = this.visibleLetters();
+    const hidden = [...word].filter((_, index) => !shown[index]).join('');
+    if (guess !== word && word[0] + guess !== word && guess !== hidden) {
+      return { ok: false, complete: false, reason: 'incorrect', word: '', rewardGold: 0, rewardScore: 0 };
+    }
+    this.activeIndex += 1;
+    let rewardGold = 0;
+    let rewardScore = 0;
+    if (this.isComplete()) {
+      const id = this.currentLevel.id;
+      if (id === 'tutorial') this.tutorialDone = true;
+      else if (!this.completed.includes(id)) {
+        this.completed.push(id);
+        rewardGold = LEVEL_GOLD;
+        rewardScore = LEVEL_SCORE;
+        this.gold += rewardGold;
+        this.score += rewardScore;
       }
-      fitViewport();
-      window.addEventListener('resize', fitViewport);
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', fitViewport);
-        window.visualViewport.addEventListener('scroll', fitViewport);
+    }
+    this.saveLocal();
+    return { ok: true, complete: this.isComplete(), reason: '', word, rewardGold, rewardScore };
+  }
+
+  revealLetter() {
+    if (!this.currentLevel.words || this.isComplete()) return { ok: false, reason: 'inactive' };
+    const word = this.currentWord();
+    const shown = this.visibleLetters();
+    const hidden = [...word].map((_, i) => i).filter(i => i > 0 && !shown[i]);
+    if (!hidden.length) return { ok: false, reason: 'all_revealed' };
+    if (this.gold < LETTER_COST) return { ok: false, reason: 'insufficient_gold' };
+    const index = hidden[Math.floor(Math.random() * hidden.length)];
+    const key = String(this.activeIndex);
+    if (!Array.isArray(this.revealed[key])) this.revealed[key] = [];
+    this.revealed[key].push(index);
+    this.gold -= LETTER_COST;
+    this.saveLocal();
+    return { ok: true, reason: '', index, letter: word[index] };
+  }
+
+  buyHint() {
+    if (!this.currentLevel.words || this.isComplete()) return { ok: false, reason: 'inactive', text: '' };
+    const key = String(this.activeIndex);
+    if (!this.hintUsed[key]) {
+      if (this.gold < HINT_COST) return { ok: false, reason: 'insufficient_gold', text: '' };
+      this.hintUsed[key] = true;
+      this.gold -= HINT_COST;
+      this.saveLocal();
+    }
+    return { ok: true, reason: '', text: this.currentDefinition() };
+  }
+
+  _storeCurrent() {
+    if (this.currentLevel.id) this.progress[this.currentLevel.id] = {
+      activeIndex: this.activeIndex,
+      revealed: clone(this.revealed),
+      hintUsed: clone(this.hintUsed),
+    };
+  }
+
+  saveLocal() {
+    this._storeCurrent();
+    if (!this.storage) { this.lastSaveOk = false; return false; }
+    const record = JSON.stringify({ version: 1, profileName: this.profileName, gold: this.gold,
+      score: this.score, completed: this.completed, tutorialDone: this.tutorialDone,
+      settings: this.settings, progress: this.progress });
+    try {
+      const previous = this.storage.getItem(SAVE_KEY);
+      // localStorage.setItem is atomic; preserve the previous valid snapshot too.
+      if (this._parse(previous)) {
+        try { this.storage.setItem(SAVE_KEY + '.bak', previous); } catch { /* Primary remains usable if quota is tight. */ }
       }
-      function failure(error) {
-        console.error(error);
-        message.textContent = location.protocol === 'file:'
-          ? 'Oyunu dosyaya çift tıklayarak açamazsın. tools/serve.ps1 ile yerel sunucuyu başlat.'
-          : 'Oyun yüklenemedi. İnternet bağlantını kontrol et ve WebGL 2 destekleyen güncel bir tarayıcıyla yeniden dene.';
-        progress.hidden = true;
-        document.getElementById('retry').hidden = false;
+      this.storage.setItem(SAVE_KEY, record);
+      this.lastSaveOk = true;
+    } catch { this.lastSaveOk = false; }
+    return this.lastSaveOk;
+  }
+
+  _parse(value) {
+    try { const data = JSON.parse(value); return object(data) && data.version === 1 ? data : null; }
+    catch { return null; }
+  }
+
+  loadLocal() {
+    if (!this.storage) return false;
+    let data;
+    try { data = this._parse(this.storage.getItem(SAVE_KEY)) ?? this._parse(this.storage.getItem(SAVE_KEY + '.bak')); }
+    catch { return false; }
+    if (!data) return false;
+    this.profileName = String(data.profileName ?? '').trim().slice(0, 18);
+    this.gold = integer(data.gold, START_GOLD);
+    this.score = integer(data.score);
+    this.tutorialDone = data.tutorialDone === true;
+    this.completed = Array.isArray(data.completed) ? [...new Set(data.completed.filter(id => id !== 'tutorial' && this.findLevel(id).words))] : [];
+    if (object(data.settings)) this.settings = { sound: data.settings.sound !== false, haptics: data.settings.haptics !== false };
+    this.progress = {};
+    if (object(data.progress)) for (const [id, entry] of Object.entries(data.progress)) {
+      const level = this.findLevel(id);
+      if (!level.words || !object(entry)) continue;
+      const activeIndex = Math.max(1, integer(entry.activeIndex, 1, level.words.length));
+      const revealed = {};
+      const hintUsed = {};
+      for (let index = 1; index < level.words.length; index++) {
+        const positions = entry.revealed?.[String(index)];
+        revealed[String(index)] = Array.isArray(positions) ? [...new Set(positions.filter(position => Number.isInteger(position) && position > 0 && position < level.words[index].length))] : [];
+        hintUsed[String(index)] = entry.hintUsed?.[String(index)] === true;
       }
-      const missing = Engine.getMissingFeatures({ threads: false });
-      if (missing.length) {
-        failure(new Error(missing.join(', ')));
-        return;
-      }
-      const engine = new Engine({"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"index","experimentalVK":true,"fileSizes":{"index.pck":588780,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
-      engine.startGame({
-        canvas,
-        canvasResizePolicy: 0,
-        onProgress(current, total) {
-          if (total > 0) progress.value = current / total * 100;
-          else progress.removeAttribute('value');
-        }
-      }).then(() => {
-        overlay.remove();
-        fitViewport();
-      }).catch(failure);
-    })();
-  </script>
+      this.progress[id] = { activeIndex, revealed, hintUsed };
+    }
+    return true;
+  }
+
+  resetProgress() {
+    this._defaults();
+    return this.saveLocal();
+  }
+}
+
+
+
+const app = document.querySelector('#app');
+const toastEl = document.querySelector('#toast');
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const icon = (name, cls='') => `<img class="icon ${cls}" src="assets/icons/${name}.svg" alt="" aria-hidden="true" width="28" height="28">`;
+const btn = (text, action, cls='', attrs='') => `<button type="button" class="btn ${cls}" data-action="${action}" ${attrs}>${text}</button>`;
+const tag = (text, cls='') => `<span class="tag ${cls}">${text}</span>`;
+let state, screen='loading', category='Tümü', partyLevel, partyCount=0, lastResult={}, toastTimer, audio;
+
+function toast(text, good=false) {
+  clearTimeout(toastTimer); toastEl.textContent=text;
+  toastEl.className=`visible${good?' success':''}`;
+  toastTimer=setTimeout(()=>{toastEl.className='';},2600);
+}
+function sound(kind='tap') {
+  if(!state.settings.sound)return;
+  try {
+    audio ||= new (window.AudioContext || window.webkitAudioContext)();
+    if(audio.state==='suspended')audio.resume();
+    const oscillator=audio.createOscillator(), gain=audio.createGain();
+    oscillator.frequency.value={tap:520,good:880,bad:180,win:1046}[kind];
+    gain.gain.setValueAtTime(.075,audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.16);
+    oscillator.connect(gain);gain.connect(audio.destination);
+    oscillator.start();oscillator.stop(audio.currentTime+.17);
+  } catch { /* Audio is optional; gameplay continues if the device disables it. */ }
+}
+function bar(title='', back=false) {
+  return `<header class="topbar">${back?`<button type="button" class="icon-btn" data-action="home" data-testid="back-home" aria-label="Ana menü">${icon('back')}</button>`:''}<div class="brand">${!back?icon('chain'):''}<span class="${back?'bar-title':''}">${title?esc(title):'SÖZCÜK<br>ZİNCİRİ'}</span></div><div class="coins" aria-label="${state.gold} altın">${icon('coin')}<span data-testid="gold">${state.gold}</span></div>${!back?`<button type="button" class="icon-btn" data-action="settings" aria-label="Oyuncu ve ayarlar">${icon('settings')}</button>`:''}</header>`;
+}
+function setScreen(name, html, cls='', keepScroll=false) {
+	clearTimeout(toastTimer);toastEl.className='';
+  screen=name;document.body.classList.remove('is-typing');
+  app.innerHTML=`<main class="${cls}" data-screen="${name}">${html}</main>`;
+  if(!keepScroll)window.scrollTo(0,0);
+}
+function nextLevel() {return state.levels.find(l=>!state.completed.includes(l.id)&&available(l));}
+function available(level) {
+  const entries=state.levels.filter(l=>l.category===level.category), i=entries.findIndex(l=>l.id===level.id);
+  return i===0||state.completed.includes(entries[i-1]?.id)||state.completed.includes(level.id);
+}
+function categoryIcon(c) {return ({Mutfak:'chef',Spor:'ball','Doğa':'leaf','Kültür':'book'})[c]||'chain';}
+
+function profile() {
+  setScreen('profile',`<div class="stack"><img class="hero-art" src="assets/hero.webp" alt="Birbirine bağlanan renkli harf kutuları" width="230" height="153">${tag('KELİME KULÜBÜNE HOŞ GELDİN')}<h1>Sana ne diyelim?</h1><p>Bir isim seç, kelimelerin peşine düş.<br>Hesap açmana gerek yok.</p><form id="profile-form" class="stack"><label class="hidden" for="profile-name">Oyuncu adın</label><input class="name-input" id="profile-name" data-testid="profile-name" name="player" maxlength="18" minlength="2" placeholder="Oyuncu adın" autocomplete="off" required><button class="btn full" data-testid="profile-submit" type="submit">HADİ BAŞLAYALIM →</button></form><div class="coin-note">${icon('coin')}İlk 100 altının bizden!</div></div>`,'profile');
+}
+function home() {
+  const next=nextLevel();
+  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Bir kelimeden diğerine, küçük bir beyin jimnastiği. Hazırsan başlayalım.</p><div class="mini-chain"><div>${tag('ÇAY → K · · · ·')}<p>Sıradaki kelime sende.</p></div><img class="hero-art" src="assets/hero.webp" alt="" width="128" height="85"></div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div><img class="hero-art" src="assets/hero.webp" alt="Birbirine bağlanan harfler" width="420" height="280"></section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','lock','Karşılıklı 1v1','Oda koduyla kelime yarışı. Gelecek bir güncellemede.','YAKINDA','online')}</div><div class="footnote">${icon('spark')}<span>Acele yok, süre yok. Sadece sen ve kelimeler.</span></div></div>`);
+}
+function modeCard(cls,ico,title,desc,label,action,attrs='') {
+  return `<section class="mode-card panel ${cls}"><div class="row">${icon(ico)}<h3>${title}</h3></div><p>${desc}</p>${btn(label,action,'white small',attrs)}</section>`;
+}
+function levels() {
+  const categories=['Tümü',...new Set(state.levels.map(l=>l.category))];
+  setScreen('levels',`${bar('Bölümler',true)}<div class="stack"><h1>Kendi rotanı çiz.</h1><p class="muted">Her kategorinin ilk bölümü açık. Zincirleri çöz, yenilerini keşfet.</p><nav class="tabs" aria-label="Kategoriler">${categories.map(c=>btn(esc(c),'category',c===category?'gold':'white',`data-category="${esc(c)}" aria-pressed="${c===category}"`)).join('')}</nav><div class="level-grid">${state.levels.filter(l=>category==='Tümü'||l.category===category).map(l=>{const done=state.completed.includes(l.id),open=available(l);return `<article class="level-card panel ${done?'done':!open?'locked':''}" data-level-id="${l.id}"><div class="row spread"><div class="row">${icon(categoryIcon(l.category))}<span class="category">${esc(l.category)}</span></div>${icon(done?'check':open?'spark':'lock')}</div><h3>${esc(l.title)}</h3><p class="small muted">${l.words.length} kelime · İlk kelime: ${esc(l.words[0])}</p>${btn(done?'TEKRAR OYNA':open?'ZİNCİRİ ÇÖZ →':'ÖNCEKİ BÖLÜMÜ TAMAMLA','level',done?'mint':'gold',`data-id="${l.id}" ${!open?'disabled':''}`)}</article>`;}).join('')}</div></div>`);
+}
+function startLevel(id) {if(state.beginLevel(id))game();}
+
+function wordRow(word,index) {
+  const mode=index<state.activeIndex?'solved':index===state.activeIndex?'active':'locked';
+  const letters=state.visibleLetters(index);
+  return `<article class="word-row" data-testid="word-row" data-mode="${mode}" data-index="${index}"><div class="word-meta"><span>${String(index+1).padStart(2,'0')}</span><span>${mode==='solved'?'TAMAMLANDI':mode==='active'?`SIRA SENDE · ${word.length} HARF`:`${word.length} HARF`}</span><span class="status">${icon(mode==='solved'?'check':mode==='active'?'arrow':'lock')}</span></div><div class="letter-entry"><div class="letter-cells" style="--letters:${word.length}">${letters.map((l,i)=>`<span class="word-tile ${l?'fixed':''}" data-testid="letter-cell" data-position="${i}">${l?esc(l):'·'}</span>`).join('')}</div>${mode==='active'?`<input class="word-input" data-testid="word-input" aria-label="Sıradaki kelimenin eksik harflerini yaz" maxlength="${word.length}" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">`:''}</div></article>`;
+}
+function controls(tutorial) {
+  const hinted=!!state.hintUsed[String(state.activeIndex)];
+  return `<p class="feedback" role="status" data-testid="feedback">Yalnızca eksik harfleri yaz; ilk harf bizden.</p>${btn('KONTROL ET ✓','submit','full','data-testid="submit-guess"')}<div class="joker-row">${btn(icon('spark')+'Harf al · 20','reveal','gold',`data-testid="reveal-letter" ${tutorial?'disabled':''}`)}${btn(icon('bulb')+(hinted?'Tanım açık ✓':'İpucu · 15'),'hint','mint',`data-testid="hint" ${tutorial?'disabled':''}`)}</div>${hinted?`<p class="hint-box" data-testid="hint-text">${esc(state.currentDefinition())}</p>`:''}`;
+}
+function game({focus=false,draft=null,scroll=false}={}) {
+  const l=state.currentLevel,tutorial=l.id==='tutorial';
+  const tips=['','Çay ile hangi kelime birleşir? Çay kaşığı! K hazır; kutulara dokun ve AŞIK yaz.','Harika! Kaşık oyunu bir halk dansıdır. O hazır; kalan kutulara YUN yaz.','Son bağlantı: oyun havası. H hazır; AVA yaz ve zinciri tamamla.'];
+  let chain='';
+  l.words.forEach((w,i)=>{if(i>0)chain+=`<div class="connector ${i<state.activeIndex?'done':''}">${icon('chain')}<span>${i<state.activeIndex?esc(l.links[i-1]):i===state.activeIndex?'Sıradaki bağlantı':''}</span></div>`;chain+=i===state.activeIndex?`<section class="active-group">${wordRow(w,i)}${controls(tutorial)}</section>`:wordRow(w,i);});
+  setScreen('game',`${bar(tutorial?'Birlikte deneyelim':l.category,true)}<section class="game-top"><div class="row spread">${tag(tutorial?'ALIŞTIRMA':'KELİME ZİNCİRİ')}<span class="small muted">${state.activeIndex} / ${l.words.length-1}</span></div><h1>${tutorial&&state.activeIndex===1?'İlk bağlantıyı kur.':'Zinciri devam ettir!'}</h1><div class="progress"><i style="width:${(state.activeIndex-1)/(l.words.length-1)*100}%"></i></div>${tutorial?`<p class="panel tutorial-tip">${tips[state.activeIndex]}</p>`:'<p class="muted">Yan yana iki kelime, anlamlı bir tamlama. Kutulara dokun, eksik harfleri yaz.</p>'}</section><div class="chain">${chain}</div><p class="game-footer">${tutorial?'İlk harfler bizden. Gerisi sende!':'Bölüm ödülü: 40 altın + 100 puan'}</p>`,'narrow',scroll);
+  const input=wordInput();
+  if(draft)restoreDraft(draft);
+  if(focus){input.focus({preventScroll:true});scrollActive();}
+  else if(scroll)requestAnimationFrame(scrollActive);
+}
+function wordInput() {return app.querySelector('[data-testid="word-input"]');}
+function entryMapping() {
+  const input=wordInput(),entered=normalizeTurkish(input?.value||''), known=state.visibleLetters();
+  const whole=entered.length===state.currentWord().length&&entered.startsWith(state.currentWord()[0]);
+  let pointer=0;const map={};
+  known.forEach((l,i)=>{if(l)return;if(whole)map[i]=entered[i];else if(pointer<entered.length)map[i]=entered[pointer++];});
+  return {entered,known,map};
+}
+function paintInput() {
+  const {known,map}=entryMapping();
+  app.querySelectorAll('[data-mode="active"] .word-tile').forEach((tile,i)=>{tile.textContent=known[i]||map[i]||'·';tile.classList.toggle('typed',!!map[i]);});
+}
+function draftByPosition() {return entryMapping().map;}
+function restoreDraft(map) {
+  wordInput().value=state.visibleLetters().map((l,i)=>l?'':map[i]||'').join('');paintInput();
+}
+function guess() {
+  const {entered,known,map}=entryMapping();
+  if(entered.length===state.currentWord().length)return entered;
+  if(entered.length>known.filter(l=>!l).length)return entered;
+  return known.map((l,i)=>l||map[i]||'').join('');
+}
+function scrollActive() {
+  if(screen!=='game')return;
+  const group=app.querySelector('.active-group');
+  const target=group?.getBoundingClientRect().height<(window.visualViewport?.height||innerHeight)-25?group:app.querySelector('[data-mode="active"]');
+  target?.scrollIntoView({block:'center',behavior:'instant'});
+}
+function submit() {
+  if(screen!=='game')return;
+  const focused=document.activeElement===wordInput();
+  const result=state.submitGuess(guess());
+  if(result.ok){
+    sound(result.complete?'win':'good');
+    if(state.settings.haptics&&navigator.vibrate)navigator.vibrate(30);
+    if(result.complete){lastResult=result;document.activeElement?.blur();win();}
+    else {game({focus:focused,scroll:true});toast(`Bağlantı tamam! ${state.currentLevel.links[state.activeIndex-2]}`,true);}
+  } else {
+    sound('bad');const f=app.querySelector('.feedback');f.textContent='Bu bağlantı olmadı. Bir daha dene; altının azalmaz.';f.classList.add('error');
+    const row=app.querySelector('[data-mode="active"]');row.classList.remove('shake');void row.offsetWidth;row.classList.add('shake');
+  }
+}
+function joker(kind) {
+  if(screen!=='game')return;
+  const draft=draftByPosition(),result=kind==='reveal'?state.revealLetter():state.buyHint();
+  if(result.ok){sound();game({draft,scroll:true});toast(kind==='reveal'?'Bir harf açıldı. Bağlantı sana kaldı!':result.text,true);}
+  else toast(result.reason==='insufficient_gold'?`${kind==='reveal'?20:15} altın gerekiyor.`:'Bu kelimede açılacak başka harf kalmadı.');
+}
+function win() {
+  const l=state.currentLevel,tutorial=l.id==='tutorial',next=nextLevel();
+  setScreen('win',`<div class="stack">${icon('trophy','trophy')}${tag('BAĞLANTILAR TAMAM!')}<h1>İşte bu, zincir sende!</h1><p>${tutorial?'Artık hazırsın! Her kelime bir sonrakinin anahtarı. Kendi kelime yolculuğuna başlayabilirsin.':'Bir bağlantı daha keşfettin. Kelime yolculuğun büyümeye devam ediyor.'}</p><section class="panel summary">${l.words.map((w,i)=>`<h3>${esc(w)}</h3>${l.links[i]?`<p>↳ ${esc(l.links[i])}</p>`:''}`).join('')}</section>${!tutorial?`<div class="rewards"><span class="row">${icon('coin')}+${lastResult.rewardGold||0} altın</span><span class="score">+${lastResult.rewardScore||0} puan</span></div>${!lastResult.rewardGold?'<p class="muted small">Bu bölümün ödülünü daha önce aldın. Yeni ödüller için yeni zincirleri çöz.</p>':''}`:''}${btn(tutorial?'ANA MENÜYE →':next?'SIRADAKİ ZİNCİR →':'ANA MENÜYE →',tutorial||!next?'home':'play','full','data-testid="win-primary"')}${tutorial&&next?btn('İLK ZİNCİRİ ÇÖZ','play','white full'):!tutorial?btn('BÖLÜMLERE DÖN','levels','white full'):''}</div>`,'win');
+}
+function party(newChain=true) {
+  if(newChain||!partyLevel){const choices=state.levels.filter(l=>l.id!==partyLevel?.id);partyLevel=choices[Math.floor(Math.random()*choices.length)];partyCount++;}
+  setScreen('party',`${bar('Parti zamanı!',true)}<div class="stack"><div class="row spread">${tag('HEP BİRLİKTE OYNAYIN')}<span class="small muted">Zincir ${String(partyCount).padStart(2,'0')}</span></div><h1>Kelimeler masada.</h1><p>Sırayla bir kelime söyleyin, bağlantısını açıklayın. Yeni bir tur için zincire dokunun.</p><section class="panel outlined party-chain" data-action="party-next"><span class="eyebrow">${esc(partyLevel.category.toLocaleUpperCase('tr-TR'))}</span>${partyLevel.words.map((w,i)=>`${btn(esc(w),'party-next','full')}${partyLevel.links[i]?`<p class="party-link">↓ ${esc(partyLevel.links[i])}</p>`:''}`).join('')}</section>${btn('YENİ ZİNCİR ↻','party-next','full','data-testid="party-next"')}<p class="muted small">Parti modunda altın harcanmaz, ilerlemen değişmez. Telefonu arkadaşlarınla paylaşman yeterli.</p></div>`,'narrow');
+}
+function settings() {
+  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Her iki kelime anlamlı bir tamlama oluşturur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.1</span></section></div>`,'narrow');
+}
+function online() {
+  setScreen('online',`${bar('Karşılıklı 1v1',true)}<div class="stack">${icon('lock')}${tag('GELECEK GÜNCELLEMEDE')}<h1>Dostça bir rekabet.</h1><p>Oda kodu, eş zamanlı başlangıç, canlı rakip skoru ve kısa mesajlar bu modun bir parçası olacak. Bu sürümde tek kişilik macera ve yüz yüze parti modu hazır.</p>${btn('MACERAYA DÖN →','home','full')}</div>`,'narrow');
+}
+
+app.addEventListener('click',event=>{
+  const target=event.target.closest('[data-action]');if(!target||target.disabled)return;
+  const action=target.dataset.action;
+  if(action==='home'&&screen==='game'&&!state.tutorialDone){toast('Birlikte üç kelimeyi bulalım. Çok az kaldı!');return;}
+  if(action==='submit')return submit();
+  if(action==='reveal'||action==='hint')return joker(action);
+  sound();
+  switch(action){
+    case 'home':home();break;
+    case 'play':{const next=nextLevel();next?startLevel(next.id):levels();break;}
+    case 'levels':levels();break;
+    case 'category':category=target.dataset.category;levels();break;
+    case 'level':{const l=state.findLevel(target.dataset.id);if(l&&available(l))startLevel(l.id);break;}
+    case 'party':party();break;
+    case 'party-next':party();break;
+    case 'settings':settings();break;
+    case 'online':online();break;
+    case 'tutorial':startLevel('tutorial');break;
+    case 'sound':state.settings.sound=!state.settings.sound;state.saveLocal();settings();break;
+    case 'haptics':state.settings.haptics=!state.settings.haptics;state.saveLocal();settings();break;
+  }
+});
+app.addEventListener('submit',event=>{if(event.target.id!=='profile-form')return;event.preventDefault();const input=app.querySelector('#profile-name');if(state.setProfile(input.value)){input.blur();startLevel('tutorial');}else toast('En az 2 harften oluşan bir isim yaz.');});
+app.addEventListener('input',event=>{if(event.target.matches('.word-input')&&!event.isComposing)paintInput();});
+app.addEventListener('compositionend',event=>{if(event.target.matches('.word-input'))paintInput();});
+app.addEventListener('keydown',event=>{if(event.target.matches('.word-input')&&event.key==='Enter'&&!event.isComposing){event.preventDefault();submit();}else if(event.key==='Escape'&&state.profileName&&(state.tutorialDone||screen!=='game'))home();});
+app.addEventListener('focusin',event=>{if(event.target.matches('input')){document.body.classList.add('is-typing');if(event.target.matches('.word-input'))requestAnimationFrame(scrollActive);}});
+app.addEventListener('focusout',()=>{setTimeout(()=>{if(!document.activeElement?.matches('input'))document.body.classList.remove('is-typing');},80);});
+function viewportChanged(){const vv=window.visualViewport;document.documentElement.style.setProperty('--vvh',`${vv?.height||innerHeight}px`);document.documentElement.style.setProperty('--keyboard-inset',`${Math.max(0,innerHeight-(vv?.height||innerHeight))}px`);if(document.activeElement?.matches('.word-input'))requestAnimationFrame(scrollActive);}
+window.visualViewport?.addEventListener('resize',viewportChanged);window.addEventListener('resize',viewportChanged);
+window.addEventListener('pagehide',()=>state?.saveLocal());
+viewportChanged();
+try {
+	const embedded=document.querySelector('#game-content');
+	let content;
+	if(embedded)content=JSON.parse(embedded.textContent);
+	else {const response=await fetch('data/levels.json');if(!response.ok)throw new Error(`Content ${response.status}`);content=await response.json();}
+	state=new ZincirState(content);
+  if(!state.profileName)profile();else if(!state.tutorialDone)startLevel('tutorial');else home();
+}catch(error){console.error(error);app.innerHTML=`<main class="boot"><h1>Kelimeler yüklenemedi.</h1><p>Bağlantını kontrol edip yeniden dene.</p><button class="btn" onclick="location.reload()">YENİDEN DENE</button></main>`;}
+
+</script>
 </body>
 </html>
-

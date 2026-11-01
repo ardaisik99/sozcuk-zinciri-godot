@@ -1,0 +1,916 @@
+{
+  "version": 1,
+  "tutorial": {
+    "id": "tutorial",
+    "category": "Öğretici",
+    "title": "İlk zincirin",
+    "words": [
+      "ÇAY",
+      "KAŞIK",
+      "OYUN",
+      "HAVA"
+    ],
+    "definitions": [
+      "Demlenerek hazırlanan sıcak içecek.",
+      "Yemek yerken veya karıştırırken kullanılan saplı mutfak aracı.",
+      "Kuralları olan, eğlenmek için yapılan etkinlik.",
+      "Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu."
+    ],
+    "links": [
+      "Çay kaşığı",
+      "Kaşık oyunu",
+      "Oyun havası"
+    ]
+  },
+  "levels": [
+    {
+      "id": "mutfak_01",
+      "category": "Mutfak",
+      "title": "Kahve molası",
+      "words": [
+        "KAHVE",
+        "FİNCAN",
+        "TAKIM",
+        "ÇANTA"
+      ],
+      "definitions": [
+        "Kavrulmuş çekirdeklerden hazırlanan aromalı içecek.",
+        "Sıcak içecekler için kullanılan küçük, kulplu kap.",
+        "Birlikte kullanılan nesneler veya birlikte çalışan kişiler topluluğu.",
+        "Eşya taşımak için kullanılan, saplı ya da askılı kap."
+      ],
+      "links": [
+        "Kahve fincanı",
+        "Fincan takımı",
+        "Takım çantası"
+      ]
+    },
+    {
+      "id": "mutfak_02",
+      "category": "Mutfak",
+      "title": "Fırından yeni çıktı",
+      "words": [
+        "EKMEK",
+        "FIRIN",
+        "KAPI",
+        "KOL",
+        "SAAT"
+      ],
+      "definitions": [
+        "Un, su ve mayayla hazırlanan temel besin.",
+        "Yiyecekleri yüksek sıcaklıkta pişiren araç veya iş yeri.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça.",
+        "Zamanı ölçen ve gösteren araç."
+      ],
+      "links": [
+        "Ekmek fırını",
+        "Fırın kapısı",
+        "Kapı kolu",
+        "Kol saati"
+      ]
+    },
+    {
+      "id": "mutfak_03",
+      "category": "Mutfak",
+      "title": "Sofra zamanı",
+      "words": [
+        "YEMEK",
+        "MASA",
+        "ÖRTÜ",
+        "DESEN"
+      ],
+      "definitions": [
+        "Beslenmek için hazırlanan yiyecek.",
+        "Üzerinde yemek yenilen veya çalışılan ayaklı eşya.",
+        "Bir şeyi korumak veya süslemek için üzerine serilen kumaş.",
+        "Bir yüzeyi süsleyen çizgi, şekil ve renk düzeni."
+      ],
+      "links": [
+        "Yemek masası",
+        "Masa örtüsü",
+        "Örtü deseni"
+      ]
+    },
+    {
+      "id": "mutfak_04",
+      "category": "Mutfak",
+      "title": "Bir bardak ferahlık",
+      "words": [
+        "MEYVE",
+        "SU",
+        "BARDAK",
+        "ALTLIK"
+      ],
+      "definitions": [
+        "Bitkilerin çoğunlukla tatlı ve yenilebilir ürünü.",
+        "Yaşam için gerekli, renksiz ve kokusuz sıvı.",
+        "İçecek içmek için kullanılan kulpsuz kap.",
+        "Bir nesnenin altına konan koruyucu parça."
+      ],
+      "links": [
+        "Meyve suyu",
+        "Su bardağı",
+        "Bardak altlığı"
+      ]
+    },
+    {
+      "id": "mutfak_05",
+      "category": "Mutfak",
+      "title": "Kahvaltı hazırlığı",
+      "words": [
+        "SÜT",
+        "ŞİŞE",
+        "KAPAK",
+        "RESİM",
+        "ÇERÇEVE"
+      ],
+      "definitions": [
+        "Memelilerin yavrularını beslediği beyaz sıvı.",
+        "Genellikle dar ağızlı, sıvı saklamaya yarayan kap.",
+        "Bir kabın ağzını veya bir nesnenin yüzünü örten parça.",
+        "Çizgi ve renklerle oluşturulan görüntü.",
+        "Bir resmi veya aynayı çevreleyen kenarlık."
+      ],
+      "links": [
+        "Süt şişesi",
+        "Şişe kapağı",
+        "Kapak resmi",
+        "Resim çerçevesi"
+      ]
+    },
+    {
+      "id": "mutfak_06",
+      "category": "Mutfak",
+      "title": "Sıcak bir başlangıç",
+      "words": [
+        "BALIK",
+        "ÇORBA",
+        "KAŞIK",
+        "OYUN"
+      ],
+      "definitions": [
+        "Suda yaşayan, solungaçla soluyan omurgalı hayvan.",
+        "Çeşitli malzemelerle hazırlanan sulu yemek.",
+        "Yemek yerken veya karıştırırken kullanılan saplı mutfak aracı.",
+        "Kuralları olan, eğlenmek için yapılan etkinlik."
+      ],
+      "links": [
+        "Balık çorbası",
+        "Çorba kaşığı",
+        "Kaşık oyunu"
+      ]
+    },
+    {
+      "id": "mutfak_07",
+      "category": "Mutfak",
+      "title": "Mutfak köşesi",
+      "words": [
+        "MUTFAK",
+        "DOLAP",
+        "KAPAK",
+        "RESİM"
+      ],
+      "definitions": [
+        "Yemeklerin hazırlandığı bölüm.",
+        "Eşyaları saklamak için kullanılan raflı, kapaklı mobilya.",
+        "Bir kabın ağzını veya bir nesnenin yüzünü örten parça.",
+        "Çizgi ve renklerle oluşturulan görüntü."
+      ],
+      "links": [
+        "Mutfak dolabı",
+        "Dolap kapağı",
+        "Kapak resmi"
+      ]
+    },
+    {
+      "id": "mutfak_08",
+      "category": "Mutfak",
+      "title": "Tatlı bir zincir",
+      "words": [
+        "TATLI",
+        "KAŞIK",
+        "OYUN",
+        "HAVA"
+      ],
+      "definitions": [
+        "Şekerli yiyeceklerin genel adı.",
+        "Yemek yerken veya karıştırırken kullanılan saplı mutfak aracı.",
+        "Kuralları olan, eğlenmek için yapılan etkinlik.",
+        "Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu."
+      ],
+      "links": [
+        "Tatlı kaşığı",
+        "Kaşık oyunu",
+        "Oyun havası"
+      ]
+    },
+    {
+      "id": "spor_01",
+      "category": "Spor",
+      "title": "Sahadan perdeye",
+      "words": [
+        "FUTBOL",
+        "SAHA",
+        "ÇİZGİ",
+        "FİLM"
+      ],
+      "definitions": [
+        "İki takımın topu rakip kaleye atmaya çalıştığı spor.",
+        "Spor karşılaşması veya belirli bir iş için ayrılmış alan.",
+        "Bir yüzey üzerindeki uzun, ince iz.",
+        "Hareketli görüntülerden oluşan sinema eseri."
+      ],
+      "links": [
+        "Futbol sahası",
+        "Saha çizgisi",
+        "Çizgi film"
+      ]
+    },
+    {
+      "id": "spor_02",
+      "category": "Spor",
+      "title": "Potaya doğru",
+      "words": [
+        "BASKETBOL",
+        "TOP",
+        "SEPET",
+        "ÖRGÜ"
+      ],
+      "definitions": [
+        "Topun yüksek bir çemberden geçirilmeye çalışıldığı takım sporu.",
+        "Oyun ve sporlarda kullanılan, çoğunlukla yuvarlak nesne.",
+        "Genellikle örülerek yapılan, eşya taşımaya yarayan kap.",
+        "İplik veya benzeri malzemeler birbirine geçirilerek yapılan iş."
+      ],
+      "links": [
+        "Basketbol topu",
+        "Top sepeti",
+        "Sepet örgüsü"
+      ]
+    },
+    {
+      "id": "spor_03",
+      "category": "Spor",
+      "title": "İlk adım",
+      "words": [
+        "SPOR",
+        "AYAKKABI",
+        "BAĞCIK",
+        "UÇ"
+      ],
+      "definitions": [
+        "Bedeni geliştirmek için yapılan kurallı hareket ve yarışmalar.",
+        "Ayağı dış etkenlerden koruyan giyecek.",
+        "Ayakkabı gibi eşyaları bağlamak için kullanılan ince şerit veya ip.",
+        "Bir şeyin son veya en dış noktası."
+      ],
+      "links": [
+        "Spor ayakkabısı",
+        "Ayakkabı bağcığı",
+        "Bağcık ucu"
+      ]
+    },
+    {
+      "id": "spor_04",
+      "category": "Spor",
+      "title": "Kortta buluşalım",
+      "words": [
+        "TENİS",
+        "KORT",
+        "KAPI",
+        "KOL"
+      ],
+      "definitions": [
+        "Raketle topun bir ağ üzerinden karşıya gönderildiği spor.",
+        "Tenis oynanan, çizgilerle sınırlandırılmış saha.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."
+      ],
+      "links": [
+        "Tenis kortu",
+        "Kort kapısı",
+        "Kapı kolu"
+      ]
+    },
+    {
+      "id": "spor_05",
+      "category": "Spor",
+      "title": "Suyla yarış",
+      "words": [
+        "YÜZME",
+        "HAVUZ",
+        "SU",
+        "SAAT"
+      ],
+      "definitions": [
+        "Suda kollar ve bacaklarla ilerleme etkinliği.",
+        "İçinde su biriktirilen, yüzmeye de uygun yapay yapı.",
+        "Yaşam için gerekli, renksiz ve kokusuz sıvı.",
+        "Zamanı ölçen ve gösteren araç."
+      ],
+      "links": [
+        "Yüzme havuzu",
+        "Havuz suyu",
+        "Su saati"
+      ]
+    },
+    {
+      "id": "spor_06",
+      "category": "Spor",
+      "title": "Hedefe bir vuruş",
+      "words": [
+        "GOLF",
+        "TOP",
+        "OYUN",
+        "KURAL"
+      ],
+      "definitions": [
+        "Küçük bir topun sopalarla belirli deliklere sokulduğu spor.",
+        "Oyun ve sporlarda kullanılan, çoğunlukla yuvarlak nesne.",
+        "Kuralları olan, eğlenmek için yapılan etkinlik.",
+        "Bir işte veya oyunda uyulması gereken ilke."
+      ],
+      "links": [
+        "Golf topu",
+        "Top oyunu",
+        "Oyun kuralı"
+      ]
+    },
+    {
+      "id": "spor_07",
+      "category": "Spor",
+      "title": "Takım ruhu",
+      "words": [
+        "FUTBOL",
+        "TAKIM",
+        "OYUN",
+        "HAVA"
+      ],
+      "definitions": [
+        "İki takımın topu rakip kaleye atmaya çalıştığı spor.",
+        "Birlikte kullanılan nesneler veya birlikte çalışan kişiler topluluğu.",
+        "Kuralları olan, eğlenmek için yapılan etkinlik.",
+        "Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu."
+      ],
+      "links": [
+        "Futbol takımı",
+        "Takım oyunu",
+        "Oyun havası"
+      ]
+    },
+    {
+      "id": "spor_08",
+      "category": "Spor",
+      "title": "Antrenman çantası",
+      "words": [
+        "SPOR",
+        "ÇANTA",
+        "ASKI",
+        "KANCA"
+      ],
+      "definitions": [
+        "Bedeni geliştirmek için yapılan kurallı hareket ve yarışmalar.",
+        "Eşya taşımak için kullanılan, saplı ya da askılı kap.",
+        "Eşyanın asılmasına ya da omuzda taşınmasına yarayan parça.",
+        "Bir şeyi tutmaya veya asmaya yarayan eğri uçlu parça."
+      ],
+      "links": [
+        "Spor çantası",
+        "Çanta askısı",
+        "Askı kancası"
+      ]
+    },
+    {
+      "id": "yasam_01",
+      "category": "Günlük Yaşam",
+      "title": "Evden çıkarken",
+      "words": [
+        "EV",
+        "KAPI",
+        "KOL",
+        "SAAT"
+      ],
+      "definitions": [
+        "İnsanların yaşadığı konut.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça.",
+        "Zamanı ölçen ve gösteren araç."
+      ],
+      "links": [
+        "Ev kapısı",
+        "Kapı kolu",
+        "Kol saati"
+      ]
+    },
+    {
+      "id": "yasam_02",
+      "category": "Günlük Yaşam",
+      "title": "Zamanın izinde",
+      "words": [
+        "DUVAR",
+        "SAAT",
+        "KULE",
+        "KAPI"
+      ],
+      "definitions": [
+        "Bir yapıyı sınırlayan veya bölümlere ayıran dik yüzey.",
+        "Zamanı ölçen ve gösteren araç.",
+        "Çevresindeki yapılardan belirgin biçimde yüksek yapı.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm."
+      ],
+      "links": [
+        "Duvar saati",
+        "Saat kulesi",
+        "Kule kapısı"
+      ]
+    },
+    {
+      "id": "yasam_03",
+      "category": "Günlük Yaşam",
+      "title": "Okul yolu",
+      "words": [
+        "OKUL",
+        "ÇANTA",
+        "CEP",
+        "TELEFON"
+      ],
+      "definitions": [
+        "Eğitim ve öğretim yapılan yer.",
+        "Eşya taşımak için kullanılan, saplı ya da askılı kap.",
+        "Giyecek veya çantalarda küçük eşyaları koymaya yarayan bölüm.",
+        "Uzaktaki kişilerle iletişim kurmayı sağlayan cihaz."
+      ],
+      "links": [
+        "Okul çantası",
+        "Çanta cebi",
+        "Cep telefonu"
+      ]
+    },
+    {
+      "id": "yasam_04",
+      "category": "Günlük Yaşam",
+      "title": "Sabah rutini",
+      "words": [
+        "DİŞ",
+        "FIRÇA",
+        "KIL",
+        "KÖK"
+      ],
+      "definitions": [
+        "Ağızda besinleri kesip çiğnemeye yarayan sert yapı.",
+        "Bir yüzeyi temizlemeye veya boyamaya yarayan kıllı araç.",
+        "Bazı canlıların derisinde çıkan ince, sert uzantı.",
+        "Bir bitkiyi toprağa bağlayan bölüm; bir yapının başlangıç kısmı."
+      ],
+      "links": [
+        "Diş fırçası",
+        "Fırça kılı",
+        "Kıl kökü"
+      ]
+    },
+    {
+      "id": "yasam_05",
+      "category": "Günlük Yaşam",
+      "title": "Yanına al",
+      "words": [
+        "EL",
+        "ÇANTA",
+        "ASKI",
+        "KANCA"
+      ],
+      "definitions": [
+        "Kolun, tutmaya ve dokunmaya yarayan son bölümü.",
+        "Eşya taşımak için kullanılan, saplı ya da askılı kap.",
+        "Eşyanın asılmasına ya da omuzda taşınmasına yarayan parça.",
+        "Bir şeyi tutmaya veya asmaya yarayan eğri uçlu parça."
+      ],
+      "links": [
+        "El çantası",
+        "Çanta askısı",
+        "Askı kancası"
+      ]
+    },
+    {
+      "id": "yasam_06",
+      "category": "Günlük Yaşam",
+      "title": "Kapıda kim var?",
+      "words": [
+        "KAPI",
+        "ZİL",
+        "SES",
+        "KAYIT"
+      ],
+      "definitions": [
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Vurulduğunda veya çalıştırıldığında ses çıkaran uyarı aracı.",
+        "Kulağın algıladığı titreşim.",
+        "Bilginin daha sonra kullanılmak üzere saklanması."
+      ],
+      "links": [
+        "Kapı zili",
+        "Zil sesi",
+        "Ses kaydı"
+      ]
+    },
+    {
+      "id": "yasam_07",
+      "category": "Günlük Yaşam",
+      "title": "İyi geceler",
+      "words": [
+        "YATAK",
+        "ODA",
+        "KAPI",
+        "KOL",
+        "SAAT"
+      ],
+      "definitions": [
+        "Uyumak veya dinlenmek için kullanılan eşya.",
+        "Bir evin duvarlarla ayrılmış bölümlerinden biri.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça.",
+        "Zamanı ölçen ve gösteren araç."
+      ],
+      "links": [
+        "Yatak odası",
+        "Oda kapısı",
+        "Kapı kolu",
+        "Kol saati"
+      ]
+    },
+    {
+      "id": "yasam_08",
+      "category": "Günlük Yaşam",
+      "title": "Bir fikir yandı",
+      "words": [
+        "MASA",
+        "LAMBA",
+        "IŞIK",
+        "HIZ"
+      ],
+      "definitions": [
+        "Üzerinde yemek yenilen veya çalışılan ayaklı eşya.",
+        "Bulunduğu yeri aydınlatan araç.",
+        "Cisimleri görmemizi sağlayan enerji.",
+        "Bir hareketin birim zamanda aldığı yol."
+      ],
+      "links": [
+        "Masa lambası",
+        "Lamba ışığı",
+        "Işık hızı"
+      ]
+    },
+    {
+      "id": "doga_01",
+      "category": "Doğa",
+      "title": "Yağmurdan sonra",
+      "words": [
+        "YAĞMUR",
+        "SU",
+        "BARDAK",
+        "ALTLIK"
+      ],
+      "definitions": [
+        "Bulutlardan yeryüzüne düşen su damlaları.",
+        "Yaşam için gerekli, renksiz ve kokusuz sıvı.",
+        "İçecek içmek için kullanılan kulpsuz kap.",
+        "Bir nesnenin altına konan koruyucu parça."
+      ],
+      "links": [
+        "Yağmur suyu",
+        "Su bardağı",
+        "Bardak altlığı"
+      ]
+    },
+    {
+      "id": "doga_02",
+      "category": "Doğa",
+      "title": "Ormanda yürüyüş",
+      "words": [
+        "ORMAN",
+        "YOL",
+        "KENAR",
+        "TAŞ"
+      ],
+      "definitions": [
+        "Geniş bir alanı kaplayan ağaç topluluğu.",
+        "Bir yerden başka bir yere gitmek için kullanılan geçit.",
+        "Bir yüzeyin, alanın veya nesnenin dış sınırı.",
+        "Yerin yapısını oluşturan sert mineral parçası."
+      ],
+      "links": [
+        "Orman yolu",
+        "Yol kenarı",
+        "Kenar taşı"
+      ]
+    },
+    {
+      "id": "doga_03",
+      "category": "Doğa",
+      "title": "Kıyı boyunca",
+      "words": [
+        "DENİZ",
+        "SU",
+        "KENAR",
+        "ÇİZGİ"
+      ],
+      "definitions": [
+        "Yeryüzündeki büyük tuzlu su kütlesi.",
+        "Yaşam için gerekli, renksiz ve kokusuz sıvı.",
+        "Bir yüzeyin, alanın veya nesnenin dış sınırı.",
+        "Bir yüzey üzerindeki uzun, ince iz."
+      ],
+      "links": [
+        "Deniz suyu",
+        "Su kenarı",
+        "Kenar çizgisi"
+      ]
+    },
+    {
+      "id": "doga_04",
+      "category": "Doğa",
+      "title": "Yeşilin dokusu",
+      "words": [
+        "ÇAM",
+        "AĞAÇ",
+        "KABUK",
+        "RENK"
+      ],
+      "definitions": [
+        "İğne yapraklı, reçineli ve genellikle her mevsim yeşil ağaç.",
+        "Odunsu gövdesi, dalları ve yaprakları olan bitki.",
+        "Bir canlıyı veya nesneyi dıştan örten koruyucu katman.",
+        "Işığın cisimlerden yansımasıyla gözde oluşan algı."
+      ],
+      "links": [
+        "Çam ağacı",
+        "Ağaç kabuğu",
+        "Kabuk rengi"
+      ]
+    },
+    {
+      "id": "doga_05",
+      "category": "Doğa",
+      "title": "Gül bahçesi",
+      "words": [
+        "GÜL",
+        "BAHÇE",
+        "KAPI",
+        "KOL"
+      ],
+      "definitions": [
+        "Güzel kokulu, çoğunlukla dikenli dalları olan çiçek.",
+        "Çiçek, sebze veya ağaç yetiştirilen çevrili alan.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."
+      ],
+      "links": [
+        "Gül bahçesi",
+        "Bahçe kapısı",
+        "Kapı kolu"
+      ]
+    },
+    {
+      "id": "doga_06",
+      "category": "Doğa",
+      "title": "Dağlardan sofraya",
+      "words": [
+        "DAĞ",
+        "KEÇİ",
+        "SÜT",
+        "ŞİŞE"
+      ],
+      "definitions": [
+        "Çevresindeki araziden çok yüksek olan yer şekli.",
+        "Sütünden ve kıllarından yararlanılan, çevik bir evcil hayvan.",
+        "Memelilerin yavrularını beslediği beyaz sıvı.",
+        "Genellikle dar ağızlı, sıvı saklamaya yarayan kap."
+      ],
+      "links": [
+        "Dağ keçisi",
+        "Keçi sütü",
+        "Süt şişesi"
+      ]
+    },
+    {
+      "id": "doga_07",
+      "category": "Doğa",
+      "title": "Doğal kaynak",
+      "words": [
+        "GÜNEŞ",
+        "IŞIK",
+        "KAYNAK",
+        "SU"
+      ],
+      "definitions": [
+        "Dünya'ya ısı ve ışık veren yıldız.",
+        "Cisimleri görmemizi sağlayan enerji.",
+        "Bir şeyin çıktığı yer; yer altı suyunun yeryüzüne çıktığı nokta.",
+        "Yaşam için gerekli, renksiz ve kokusuz sıvı."
+      ],
+      "links": [
+        "Güneş ışığı",
+        "Işık kaynağı",
+        "Kaynak suyu"
+      ]
+    },
+    {
+      "id": "doga_08",
+      "category": "Doğa",
+      "title": "Yaprağın yolu",
+      "words": [
+        "YAPRAK",
+        "DAMAR",
+        "YOL",
+        "HARİTA"
+      ],
+      "definitions": [
+        "Bitkilerin genellikle yeşil, yassı ve ince bölümü.",
+        "Canlılarda sıvı taşıyan ince kanalların genel adı.",
+        "Bir yerden başka bir yere gitmek için kullanılan geçit.",
+        "Bir yerin belirli ölçekte küçültülmüş çizimi."
+      ],
+      "links": [
+        "Yaprak damarı",
+        "Damar yolu",
+        "Yol haritası"
+      ]
+    },
+    {
+      "id": "kultur_01",
+      "category": "Kültür",
+      "title": "Bir kitabın yüzü",
+      "words": [
+        "KİTAP",
+        "KAPAK",
+        "RESİM",
+        "SERGİ"
+      ],
+      "definitions": [
+        "Bir araya getirilmiş yazılı veya basılı sayfalar bütünü.",
+        "Bir kabın ağzını veya bir nesnenin yüzünü örten parça.",
+        "Çizgi ve renklerle oluşturulan görüntü.",
+        "Sanat eserlerinin veya ürünlerin görülmek üzere sunulduğu etkinlik."
+      ],
+      "links": [
+        "Kitap kapağı",
+        "Kapak resmi",
+        "Resim sergisi"
+      ]
+    },
+    {
+      "id": "kultur_02",
+      "category": "Kültür",
+      "title": "Sanata açılan kapı",
+      "words": [
+        "SANAT",
+        "GALERİ",
+        "KAPI",
+        "KOL"
+      ],
+      "definitions": [
+        "Duygu ve düşünceleri estetik yollarla anlatan üretim alanı.",
+        "Sanat eserlerinin sergilendiği mekân.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."
+      ],
+      "links": [
+        "Sanat galerisi",
+        "Galeri kapısı",
+        "Kapı kolu"
+      ]
+    },
+    {
+      "id": "kultur_03",
+      "category": "Kültür",
+      "title": "Perde açılıyor",
+      "words": [
+        "SİNEMA",
+        "SALON",
+        "KAPI",
+        "KOL"
+      ],
+      "definitions": [
+        "Hareketli görüntülerle öykü anlatan sanat; film izlenen yer.",
+        "Toplantı, gösteri veya konuk ağırlamak için kullanılan geniş oda.",
+        "Bir yere girip çıkmayı sağlayan açılır kapanır bölüm.",
+        "Omuzdan ele uzanan uzuv; bir aracı tutmaya yarayan parça."
+      ],
+      "links": [
+        "Sinema salonu",
+        "Salon kapısı",
+        "Kapı kolu"
+      ]
+    },
+    {
+      "id": "kultur_04",
+      "category": "Kültür",
+      "title": "Sahneden satırlara",
+      "words": [
+        "TİYATRO",
+        "OYUN",
+        "YAZAR",
+        "EV"
+      ],
+      "definitions": [
+        "Oyuncuların sahnede canlandırdığı gösteri sanatı.",
+        "Kuralları olan, eğlenmek için yapılan etkinlik.",
+        "Kitap, öykü veya oyun gibi metinleri kaleme alan kişi.",
+        "İnsanların yaşadığı konut."
+      ],
+      "links": [
+        "Tiyatro oyunu",
+        "Oyun yazarı",
+        "Yazar evi"
+      ]
+    },
+    {
+      "id": "kultur_05",
+      "category": "Kültür",
+      "title": "Bir melodi",
+      "words": [
+        "MÜZİK",
+        "ALET",
+        "KUTU",
+        "KAPAK"
+      ],
+      "definitions": [
+        "Seslerin ritim ve düzen içinde bir araya getirildiği sanat.",
+        "Bir işi yapmaya yarayan araç.",
+        "Çeşitli eşyaları koymak için kullanılan kapalı kap.",
+        "Bir kabın ağzını veya bir nesnenin yüzünü örten parça."
+      ],
+      "links": [
+        "Müzik aleti",
+        "Alet kutusu",
+        "Kutu kapağı"
+      ]
+    },
+    {
+      "id": "kultur_06",
+      "category": "Kültür",
+      "title": "Ritmi yakala",
+      "words": [
+        "HALK",
+        "OYUN",
+        "HAVA",
+        "DURUM"
+      ],
+      "definitions": [
+        "Bir ülkede veya bölgede yaşayan insan topluluğu.",
+        "Kuralları olan, eğlenmek için yapılan etkinlik.",
+        "Dünyayı çevreleyen gaz tabakası; bir yerin atmosfer durumu.",
+        "Bir şeyin belli bir andaki hâli."
+      ],
+      "links": [
+        "Halk oyunu",
+        "Oyun havası",
+        "Hava durumu"
+      ]
+    },
+    {
+      "id": "kultur_07",
+      "category": "Kültür",
+      "title": "Dizelerin arasında",
+      "words": [
+        "ŞİİR",
+        "KİTAP",
+        "KAPAK",
+        "RESİM"
+      ],
+      "definitions": [
+        "Duygu ve düşüncelerin ritim ve yoğun bir anlatımla aktarıldığı tür.",
+        "Bir araya getirilmiş yazılı veya basılı sayfalar bütünü.",
+        "Bir kabın ağzını veya bir nesnenin yüzünü örten parça.",
+        "Çizgi ve renklerle oluşturulan görüntü."
+      ],
+      "links": [
+        "Şiir kitabı",
+        "Kitap kapağı",
+        "Kapak resmi"
+      ]
+    },
+    {
+      "id": "kultur_08",
+      "category": "Kültür",
+      "title": "Öykülerin buluşması",
+      "words": [
+        "ÖYKÜ",
+        "KİTAP",
+        "FUAR",
+        "ALAN"
+      ],
+      "definitions": [
+        "Yaşanmış veya tasarlanmış olayları anlatan kısa edebî eser.",
+        "Bir araya getirilmiş yazılı veya basılı sayfalar bütünü.",
+        "Ürünlerin veya yayınların tanıtıldığı büyük sergi ve buluşma.",
+        "Belirli bir iş veya etkinlik için ayrılmış geniş yer."
+      ],
+      "links": [
+        "Öykü kitabı",
+        "Kitap fuarı",
+        "Fuar alanı"
+      ]
+    }
+  ]
+}

@@ -3,12 +3,14 @@
 Bu klasör oyuna ait özgün ikonları, çizimi ve yerel fontları içerir. Oyun çalışırken dış font ya da görsel servisine bağlanmaz.
 
 - `hero.png`: Dahili ImageGen aracıyla üretilmiş özgün saydam oyun çizimi. 768×512 RGBA, yaklaşık 343 KB. Kaynak oluşturma çıktısı Codex generated_images klasöründe korunur.
+- `hero.webp`: Hızlı web sürümü için aynı çizimin 512 piksel genişliğe küçültülmüş, alfa kanalı korunmuş WebP kopyası; kalite 82. Godot PNG kaynağı değiştirilmez.
 - `icons/*.svg`: Oyuna özel 26 özgün, yuvarlak hatlı vektör ikon; 64×64. Kaynak üretici `generate_icons.py`.
 - `icon.svg`: Özgün uygulama simgesi.
 - `pattern.svg`: Çok düşük kontrastlı, döşenebilir zincir ve harf deseni.
 - `fonts/Baloo2.ttf`: Türkçe karakterli Baloo 2 ExtraBold, 800 ağırlık, Latin ve genişletilmiş Latin alt kümesi. SIL Open Font License 1.1, `Baloo2-OFL.txt`.
 - `fonts/Nunito.ttf`: Türkçe karakterli Nunito ExtraBold, 800 ağırlık. SIL Open Font License 1.1, `Nunito-OFL.txt`.
 - `fonts/Symbols.ttf`: Noto Sans Math Regular içinden yalnızca oyunda kullanılan ok, onay işareti ve basit simgeleri içeren küçük alt küme. `→ ✓ ↻ ↳ ↓` glifleri doğrulanmıştır. SIL Open Font License 1.1, `Symbols-OFL.txt`. Web sürümünde işletim sistemi fontlarına ihtiyaç duymayan simge yedeği olarak kullanılır.
+- `fonts/{Baloo2,Nunito,Symbols}.woff2`: Aynı lisanslı fontların web için WOFF2 biçiminde sıkıştırılmış kopyaları. Türkçe ve simge glifleri korunur.
 - `fonts/Fredoka.ttf`: Fredoka Bold 700. Türkçe Ğ, İ, Ş, ğ, ş gliflerini içermediğinden ana Türkçe metinlerde Baloo 2 tercih edilir. SIL Open Font License 1.1, `Fredoka-OFL.txt`.
 
 Fontlar Google Fonts'un resmi deposundan alınmıştır: [Baloo 2](https://github.com/google/fonts/tree/main/ofl/baloo2), [Nunito](https://github.com/google/fonts/tree/main/ofl/nunito), [Fredoka](https://github.com/google/fonts/tree/main/ofl/fredoka). Font dosyalarının isim ve lisans kayıtları korunmuştur.
