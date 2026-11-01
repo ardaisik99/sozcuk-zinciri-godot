@@ -1,6 +1,6 @@
 # Sözcük Zinciri
 
-Godot 4.7.2 ile hazırlanmış, Türkçe isim tamlamalarını bir zincirde birleştirdiğin mobil uyumlu kelime oyunu. Web çıktısı aynı Godot projesidir.
+Godot 4.7.2 ile hazırlanmış, Türkçe isim tamlamalarını bir zincirde birleştirdiğin mobil uyumlu kelime oyunu. GitHub Pages sürümü aynı bölüm içeriğini ve oyun ekonomisini kullanan hafif bir HTML/CSS/JavaScript uygulamasıdır. Godot projesi ayrıca yerel olarak çalışır.
 
 [Oyunu tarayıcıda aç](https://ardaisik99.github.io/sozcuk-zinciri-godot/) · [GitHub kaynak deposu](https://github.com/ardaisik99/sozcuk-zinciri-godot)
 
@@ -18,21 +18,29 @@ Hazır çıktı `docs/` klasöründedir. Dosyaya çift tıklamak yerine PowerShe
 ./tools/serve.ps1
 ```
 
-Ardından [http://localhost:8060](http://localhost:8060) adresini aç. Python 3 gerekir. Web sürümü WebAssembly ve WebGL 2 destekleyen güncel bir tarayıcı ister.
+Ardından [http://localhost:8060](http://localhost:8060) adresini aç. Python 3 gerekir. Web sürümü modern bir tarayıcıda çalışır; WebAssembly motoru indirmez.
 
-Değişikliklerden sonra Godot'un **4.7.2 export templates** paketini kurup yeniden dışa aktar:
+Hızlı web sürümünü kaynak dosyalardan yeniden oluştur:
+
+```powershell
+python tools/build_web.py
+```
+
+Bu işlem `web/` kaynaklarını ve `data/levels.json` içeriğini tek HTML dosyasına paketler; küçük WebP/WOFF2/SVG görsellerini `docs/assets/` altına kopyalar. Bir paket yöneticisi gerekmez.
+
+Godot motorunu tarayıcıda ayrıca test etmek istersen **4.7.2 export templates** paketini kurup isteğe bağlı büyük WebAssembly çıktısını oluştur:
 
 ```powershell
 ./tools/export-web.ps1 -Godot 'C:\Godot\Godot_v4.7.2-stable_win64_console.exe'
 ```
 
-Godot **Project → Export → Web → Export Project** ile `docs/index.html` dosyasına da çıktı alabilirsin. Single-threaded Web preset'i GitHub Pages üzerinde özel HTTP başlığı gerektirmez.
+Bu çıktı `output/godot-web/index.html` altındadır ve hızlı `docs/` sürümünü değiştirmez. Godot motor dosyası yaklaşık 39,5 MB (gzip aktarımı yaklaşık 10,2 MB) olduğu için bu seçenek GitHub Pages'in varsayılan sürümü değildir.
 
 ## GitHub Pages'e gönderme
 
 1. Bu klasörü kendi GitHub deponun `main` dalına yükle.
 2. Depoda **Settings → Pages → Source → GitHub Actions** seç.
-3. **Actions → Godot oyununu GitHub Pages'e yayınla** iş akışını çalıştır. Sonraki `main` gönderimlerinde otomatik yeniden yayınlanır.
+3. **Actions → Sözcük Zinciri hızlı web sürümünü yayınla** iş akışını çalıştır. Sonraki `main` gönderimlerinde otomatik yeniden yayınlanır.
 4. Başarılı çalışmanın `github-pages` adresini arkadaşlarınla paylaş.
 
 Hazır `docs/` çıktısını kullanarak derlemesiz yayınlamak istersen Pages Source'u **Deploy from a branch → main → /docs** seçebilirsin. İki yayın yönteminden birini kullan. Bu teslimat için ayrı `sozcuk-zinciri-godot` deposu kullanılır.
@@ -43,17 +51,20 @@ Hazır `docs/` çıktısını kullanarak derlemesiz yayınlamak istersen Pages S
 
 Profil, altın, puan ve ilerleme cihazda kaydedilir. Web'de tarayıcı/site verilerini temizlemek kaydı siler; özel modda kalıcı kayıt tarayıcıya bağlıdır. İnternet bağlantılı 1v1 henüz etkin değildir. Parti modu aynı cihaz etrafında yüz yüze oynanır.
 
+Godot ve hızlı web sürümünün cihaz kayıtları ayrıdır; birindeki ilerleme diğerine otomatik aktarılmaz.
+
 ## Doğrulama
 
 ```powershell
 & 'C:\Godot\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --script tests/test_state.gd
 & 'C:\Godot\Godot_v4.7.2-stable_win64_console.exe' --headless --path . --script tests/test_ui.gd
+node tools/test_web_state.mjs
 ```
 
 Yerel doğrulamada oyun mantığı için 361, arayüz için 74 kontrol geçti. Arayüz testleri 320–1440 piksel genişlikleri, uzun oyuncu adı, doğrudan kutuya yazma, kısa ekranda aktif alanın görünmesi, joker sırasında yazıyı koruma ve tekrar ödül korumasını kapsar. Chrome'da masaüstü ve dokunmatik mobil emülasyonuyla web yükleme/öğretici/kayıt testleri de yapılır. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
 
-Compatibility renderer, tek iş parçacıklı web çıktısı, yerel fontlar, küçük vektör simgeler ve paylaşılan görseller kullanılır. Android/iOS imzalama veya mağaza paketleri bu teslimata dahil değildir; mobil tarayıcıda aynı oyunu test edebilirsin.
+Godot sürümü Compatibility renderer kullanır. Hızlı web sürümü yerel WebP/WOFF2 dosyaları ve küçük SVG simgeler kullanır. Android/iOS imzalama veya mağaza paketleri bu teslimata dahil değildir; mobil tarayıcı sürümü doğrudan test edilebilir.
 
-Oyun paketi yaklaşık 0,6 MB'dır; ilk web açılışında buna Godot'un yaklaşık 39,5 MB WebAssembly motoru eklenir. Arayüzde sürekli çalışan görsel efektler yoktur; hareketsiz ekranlarda Godot'un düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
+Hızlı web HTML dosyası yaklaşık 60 KB (gzip yaklaşık 19 KB), kopyalanan görsel ve fontların tamamı yaklaşık 138 KB'dır. HTML içindeki oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Godot arayüzünde sürekli çalışan görsel efektler yoktur; hareketsiz ekranlarda düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
 
 Godot: [resmi indirme](https://godotengine.org/download/windows/), [web dışa aktarma belgesi](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html).

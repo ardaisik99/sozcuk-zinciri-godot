@@ -11,10 +11,9 @@ if (-not $Godot) {
     }
 }
 if (-not $Godot) { throw 'Godot 4.7.2 yolunu -Godot parametresiyle belirt veya GODOT_BIN değişkenini ayarla.' }
-New-Item -ItemType Directory -Path (Join-Path $taskProjectPath 'docs') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $taskProjectPath 'output\godot-web') -Force | Out-Null
 & $Godot --headless --path $taskProjectPath --editor --import
 if ($LASTEXITCODE -ne 0) { throw "Godot içe aktarma başarısız: $LASTEXITCODE" }
-& $Godot --headless --path $taskProjectPath --export-release Web (Join-Path $taskProjectPath 'docs\index.html')
+& $Godot --headless --path $taskProjectPath --export-release Web (Join-Path $taskProjectPath 'output\godot-web\index.html')
 if ($LASTEXITCODE -ne 0) { throw "Web dışa aktarma başarısız: $LASTEXITCODE" }
-New-Item -ItemType File -Path (Join-Path $taskProjectPath 'docs\.nojekyll') -Force | Out-Null
-Write-Output 'Web çıktısı hazır: docs/index.html. Yerelde açmak için ./tools/serve.ps1'
+Write-Output 'İsteğe bağlı Godot WebAssembly çıktısı hazır: output/godot-web/index.html. GitHub Pages hızlı sürümü için python tools/build_web.py kullan.'

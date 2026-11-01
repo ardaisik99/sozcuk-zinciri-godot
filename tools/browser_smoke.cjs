@@ -20,7 +20,7 @@ fs.mkdirSync(output, { recursive: true });
       page.on('pageerror', error => errors.push(error.message));
       page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
       const response = await page.goto(process.env.GAME_URL || 'http://localhost:8060', { waitUntil: 'domcontentloaded' });
-      await page.waitForFunction(() => !document.querySelector('#loading'), { timeout: 60000 });
+      await page.waitForFunction(() => !document.querySelector('#loading'), null, { timeout: 120000 });
       await page.waitForTimeout(1200);
       const geometry = await page.locator('#canvas').evaluate(canvas => ({
         width: canvas.width, height: canvas.height,
