@@ -21,9 +21,18 @@ Fontlar Google Fonts'un resmi deposundan alınmıştır: [Baloo 2](https://githu
 
 Simge fontunun resmi kaynağı: [Noto Sans Math](https://github.com/google/fonts/tree/main/ofl/notosansmath). Noto Sans Symbols 2, temel okların tamamını içermediğinden tüm gerekli glifleri tek dosyada içeren Noto Sans Math seçilmiştir.
 
+## Ek maskot pozları ve koşu
+
+- `mascot-think.png/.webp`: Düşünen poz; oyundaki rehber kartında kullanılır. WebP 17.240 bayt.
+- `mascot-cheer.png/.webp`: Selamlama ve kutlama pozu; profil ve sonuç ekranlarında kullanılır. WebP 15.594 bayt.
+- `mascot-run.png/.webp`: Sekiz farklı koşu karesi tek yatay şeritte; 1024×128, kareler 128×128, 10 FPS. WebP 32.670 bayt.
+- `mascot-run.json`: Godot koşu atlasının kare dikdörtgenleri ve zamanlaması.
+- Üretim istemleri ve mekanik sıkıştırma notları: [pozlar](mascot-pose-notes.md), [koşu](mascot-run-notes.md).
+- Yüksek çözünürlüklü `*-source.png` ana çizimler oyun paketine dahil edilmez.
+
 ## Palet
 
-Krem `#fff8eb`, koyu mürekkep `#263657`, mercan `#fa714d`, turkuaz `#28aaa0`, altın `#ffc647`, mor `#7961bd`.
+Krem `#fff2d5`, koyu mürekkep `#142d50`, mercan `#ff6538`, turkuaz `#39cdb8`, altın `#ffbe24`, mor `#b398ed`. Küçük metin ve odak halkaları için koyu turkuaz kullanılır.
 
 ## Güncel maskot üretim istemi
 

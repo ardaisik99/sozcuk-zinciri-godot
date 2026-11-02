@@ -18,14 +18,14 @@ var answer_tween: Tween
 func _ready() -> void:
 	var active = mode == "active"
 	var solved = mode == "solved"
-	add_theme_stylebox_override("panel", U.box(Color("e1f1e9") if solved else Color.WHITE if active else Color("f2efe7"), 18, U.INK if active else Color("c8ded3") if solved else U.LINE, 2 if active else 1, 4 if active else 0))
+	add_theme_stylebox_override("panel", U.box(U.SOLVED if solved else U.PAPER if active else U.NEUTRAL, 18, U.YELLOW if active else U.TEAL_INK if solved else U.LINE, 3 if active else 1, 4 if active else 0))
 	custom_minimum_size.y = 108 if active else 94
 	var v = U.column(9)
 	add_child(v)
 	var top = U.row(8)
 	v.add_child(top)
-	top.add_child(U.label("%02d" % ordinal, 12, U.TEAL if solved else U.MUTED, true))
-	status_label = U.label("TAMAMLANDI" if solved else "SIRA SENDE · %d HARF" % word.length() if active else "%d HARF" % word.length(), 12, U.TEAL if solved else U.ORANGE if active else U.MUTED, true)
+	top.add_child(U.label("%02d" % ordinal, 12, U.TEAL_INK if solved else U.MUTED, true))
+	status_label = U.label("TAMAMLANDI" if solved else "SIRA SENDE · %d HARF" % word.length() if active else "%d HARF" % word.length(), 12, U.TEAL_INK if solved else U.INK if active else U.MUTED, true)
 	top.add_child(status_label)
 	top.add_child(U.expand())
 	top.add_child(U.icon("check" if solved else "arrow" if active else "lock", 18))
@@ -70,7 +70,7 @@ func _build_tiles() -> void:
 		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var solved = mode == "solved"
-		var bg = Color("f2c75f") if i == 0 and not solved else Color("c4e4d6") if solved else Color("f6f1e8") if mode == "active" else Color("ebe6dc")
+		var bg = U.YELLOW if i == 0 and not solved else Color("63cfa9") if solved else U.CREAM if mode == "active" else Color("e2d4b5")
 		var style = U.box(bg, 7)
 		style.set_content_margin_all(0)
 		tile.add_theme_stylebox_override("panel", style)
@@ -92,8 +92,8 @@ func show_correct_answer(answer: String) -> void:
 	mode = "solved"
 	known.clear()
 	status_label.text = "DOĞRU CEVAP!"
-	status_label.add_theme_color_override("font_color", U.TEAL)
-	add_theme_stylebox_override("panel", U.box(Color("e1f1e9"), 18, U.TEAL, 2))
+	status_label.add_theme_color_override("font_color", U.TEAL_INK)
+	add_theme_stylebox_override("panel", U.box(U.SOLVED, 18, U.TEAL_INK, 2))
 	_build_tiles()
 	_update_letters()
 
@@ -105,7 +105,7 @@ func animate_to_stem(stem: String, reduced_motion: bool = false) -> void:
 		answer_tween.tween_interval(0.38)
 		answer_tween.tween_callback(_show_stem.bind(stem))
 		return
-	answer_tween.tween_property(self, "modulate", Color("c4eee1"), 0.12)
+	answer_tween.tween_property(self, "modulate", Color("b7f0da"), 0.12)
 	answer_tween.tween_interval(0.15)
 	answer_tween.tween_property(letter_line, "modulate:a", 0.35, 0.12)
 	answer_tween.tween_callback(_show_stem.bind(stem))
@@ -143,7 +143,7 @@ func _update_letters() -> void:
 				letter = entered[pointer]
 			pointer += 1
 		cells[i].text = letter if not letter.is_empty() else "·"
-		cells[i].add_theme_color_override("font_color", U.INK if not letter.is_empty() else Color("c5bfb3"))
+		cells[i].add_theme_color_override("font_color", U.INK if not letter.is_empty() else Color("95876d"))
 
 func guess() -> String:
 	if not is_instance_valid(edit): return ""

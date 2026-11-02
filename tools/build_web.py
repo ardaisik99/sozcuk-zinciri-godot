@@ -33,6 +33,8 @@ shutil.copy2(ROOT / 'data/levels.json', DEST / 'data/levels.json')
 (DEST / 'assets/icons').mkdir(parents=True, exist_ok=True)
 shutil.copy2(ROOT / 'assets/mascot.webp', DEST / 'assets/mascot.webp')
 shutil.copy2(ROOT / 'assets/mascot-icon.png', DEST / 'assets/mascot-icon.png')
+for name in ['mascot-think.webp', 'mascot-cheer.webp', 'mascot-run.webp']:
+    shutil.copy2(ROOT / 'assets' / name, DEST / 'assets' / name)
 (DEST / 'assets/hero.webp').unlink(missing_ok=True)
 for name in ['Baloo2', 'Nunito', 'Symbols']:
     shutil.copy2(ROOT / f'assets/fonts/{name}.woff2', DEST / f'assets/fonts/{name}.woff2')

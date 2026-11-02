@@ -26,6 +26,12 @@ func _run() -> void:
 	await capture("menu-desktop.png")
 	root.size = Vector2i(390, 844)
 	await create_timer(0.4).timeout
+	app._show_loading()
+	await process_frame
+	app.loading_runner.set_app_paused(false)
+	await capture("loading-mobile-frame-a.png")
+	await create_timer(0.2).timeout
+	await capture("loading-mobile-frame-b.png")
 	app._show_home()
 	await capture("menu-mobile.png")
 	app._show_profile()

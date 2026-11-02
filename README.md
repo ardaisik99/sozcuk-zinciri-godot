@@ -8,6 +8,8 @@ Godot 4.7.2 ile hazırlanmış, Türkçe isim tamlamalarını bir zincirde birle
 
 v1.2'de kullanıcının mavi damla karakteri, elinde defter ve kalemle oyunun maskotu oldu. Önceki S/Z/C çizimi arayüzden kaldırıldı. Oyuncu tamlamayı doğal çekimiyle yazar: **SU + BARDAĞI**. Doğru cevap yaklaşık 0,75 saniyede **BARDAK** biçimine dönüşür; sonraki kelime bu kökten devam eder. Çekimli cevaplar tüm bölümlerde tek tek tanımlıdır. Web sürümü sistemin hareketi azaltma tercihini izler.
 
+v1.3'te palet daha canlı turkuaz, sıcak sarı, mercan ve mor tonlarına geçirildi. Maskot artık dört bağlamda kullanılır: yüklemede koşu, ana menüde bulmaca defteri, oyunda düşünme ve bölüm sonunda sevinme. Koşu, sekiz karelik tek atlasla 10 FPS çalışır; yükleme bittiğinde kaldırılır, gizli sekmede durur. Web açılışı yalnızca gerçek görsel hazırlığını bekler; minimum bekleme eklenmez ve yavaş isteğe bağlı görseller oyunu engellemez.
+
 ## Godot'ta çalıştırma
 
 Godot 4.7.2 Standard sürümünde `project.godot` dosyasını içe aktar ve **F5** ile çalıştır. .NET veya bir API anahtarı gerekmez. Mobil uyumlu portre düzeni masaüstünde de çalışır.
@@ -65,10 +67,10 @@ Godot ve hızlı web sürümünün cihaz kayıtları ayrıdır; birindeki ilerle
 node tools/test_web_state.mjs
 ```
 
-v1.2 doğrulamasında Godot mantığı 789, Godot arayüzü 349, web mantığı 512 ve tarayıcı akışı 55 kontrolden geçti. Çekimli cevaplar, köke dönüşüm, tüm bölümlerin harf sayısı, eski kayıt göçü, dönüşüm sırasında art arda gönderim/joker engeli, ekrandan ayrılma, hareketi azaltma, mobil giriş ve 320–1440 piksel düzenler kontrol edildi. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
+v1.3 doğrulamasında Godot mantığı 789, Godot arayüzü 374, web mantığı 512 ve tarayıcı akışı 79 kontrolden geçti. Çekimli cevaplar, köke dönüşüm, tüm bölümlerin harf sayısı, eski kayıt göçü, dönüşüm sırasında art arda gönderim/joker engeli, ekrandan ayrılma, hareketi azaltma, mobil giriş ve 320–1440 piksel düzenler kontrol edildi. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
 
 Godot sürümü Compatibility renderer kullanır. Hızlı web sürümü yerel WebP/WOFF2 dosyaları ve küçük SVG simgeler kullanır. Android/iOS imzalama veya mağaza paketleri bu teslimata dahil değildir; mobil tarayıcı sürümü doğrudan test edilebilir.
 
-Hızlı web HTML dosyası yaklaşık 69 KB (gzip yaklaşık 21 KB), kopyalanan görsel ve fontların tamamı yaklaşık 135 KB'dır. Web maskotu yalnızca 27 KB'dır ve ekranlar aynı dosyayı paylaşır. HTML içindeki oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Efektler yalnızca cevapta kısa süre çalışır; sürekli parçacık, video veya animasyon döngüsü yoktur. Godot'un hareketsiz ekranlarında düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
+Hızlı web HTML dosyası yaklaşık 75 KB (gzip yaklaşık 23 KB), kopyalanan görsel ve fontların tamamı yaklaşık 200 KB'dır. Kitaplı maskot 27 KB, düşünme ve sevinme pozları toplam 33 KB, koşu atlası 33 KB'dır. Kullanılacak giriş pozu ve koşu atlası hazırlanır; diğer pozlar ilgili ekranda yüklenir. HTML içindeki oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Cevap efektleri kısa süre çalışır. Tek döngü yükleme ekranındaki küçük koşu atlasıdır; diğer ekranlarda sürekli parçacık veya video yoktur. Godot'un hareketsiz ekranlarında düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
 
 Godot: [resmi indirme](https://godotengine.org/download/windows/), [web dışa aktarma belgesi](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html).

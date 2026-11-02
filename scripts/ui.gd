@@ -1,16 +1,23 @@
 class_name ZincirUI
 extends RefCounted
 
-const INK = Color("29364f")
-const MUTED = Color("78808c")
-const CREAM = Color("fff8ee")
+const INK = Color("142d50")
+const MUTED = Color("4b6280")
+const CREAM = Color("fff2d5")
 const PAPER = Color("ffffff")
-const ORANGE = Color("fb7852")
-const YELLOW = Color("ffca51")
-const TEAL = Color("2ba99e")
-const MINT = Color("d9eee7")
-const PURPLE = Color("8370b6")
-const LINE = Color("e5ded2")
+const ORANGE = Color("ff6538")
+const YELLOW = Color("ffbe24")
+const TEAL = Color("12b7b0")
+const TEAL_INK = Color("005b56")
+const MINT = Color("80ded1")
+const HERO = Color("39cdb8")
+const SOLVED = Color("9be5c7")
+const PURPLE = Color("9c7be8")
+const LILAC = Color("b398ed")
+const APRICOT = Color("ffbd68")
+const SOFT_GOLD = Color("ffe18a")
+const NEUTRAL = Color("ede2ca")
+const LINE = Color("d7c295")
 
 static func heading_font() -> Font:
 	var font: FontFile = load("res://assets/fonts/Baloo2.ttf")
@@ -74,11 +81,11 @@ static func button(text: String, color: Color = ORANGE, callback: Callable = Cal
 	b.add_theme_color_override("font_color", INK)
 	b.add_theme_color_override("font_hover_color", INK)
 	b.add_theme_color_override("font_pressed_color", INK)
-	b.add_theme_color_override("font_disabled_color", Color("979c9e"))
+	b.add_theme_color_override("font_disabled_color", Color("697585"))
 	b.add_theme_stylebox_override("normal", box(color, 17, INK, 2, 4))
 	b.add_theme_stylebox_override("hover", box(color.lightened(0.09), 17, INK, 2, 4))
 	b.add_theme_stylebox_override("pressed", box(color.darkened(0.07), 17, INK, 2))
-	b.add_theme_stylebox_override("disabled", box(Color("e6e2da"), 17, LINE, 2, 2))
+	b.add_theme_stylebox_override("disabled", box(NEUTRAL, 17, LINE, 2, 2))
 	b.add_theme_stylebox_override("focus", box(Color.TRANSPARENT, 17, TEAL, 3))
 	if callback.is_valid():
 		b.pressed.connect(callback)
@@ -142,7 +149,7 @@ static func progress(value: float, color: Color = TEAL, height: int = 10) -> Pro
 	p.custom_minimum_size.y = height
 	p.show_percentage = false
 	p.value = value
-	var bg = box(Color("e8e6df"), height / 2)
+	var bg = box(Color("e6d9b9"), height / 2)
 	bg.set_content_margin_all(0)
 	var fill = box(color, height / 2)
 	fill.set_content_margin_all(0)
