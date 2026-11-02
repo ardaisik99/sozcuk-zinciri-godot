@@ -5,7 +5,6 @@ const assert = require('node:assert/strict');
 const playwright = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const URL = process.env.GAME_URL || 'http://localhost:8060';
 const SAVE_KEY = 'sozcuk_zinciri_v1';
-const captureLoader = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::|\/)/u.test(URL);
 const out = path.resolve(__dirname, '../output');
 fs.mkdirSync(out, { recursive: true });
 
@@ -32,6 +31,7 @@ fs.mkdirSync(out, { recursive: true });
   page.on('request', r => fetched.add(r.url()));
   let checks = 0;
   const criticalContrasts = [];
+  const bootstrapProbes = [];
   const check = (condition, message) => { checks++; assert.ok(condition, message); };
   const t = name => page.getByTestId(name);
   const screen = name => page.locator(`main[data-screen="${name}"]`);
@@ -74,73 +74,129 @@ fs.mkdirSync(out, { recursive: true });
     criticalContrasts.push({ testId, ...colors, ratio: Math.round(ratio * 100) / 100 });
     check(ratio >= 4.5, `Critical control ${testId} should retain readable label contrast (${ratio.toFixed(2)}).`);
   }
+  async function editorialMascot(label) {
+    const images = page.locator('img.mascot');
+    check(await images.count() > 0, `${label} should display the editorial mascot.`);
+    check(await images.evaluateAll(items => items.every(image => /\/assets\/mascot-editorial\.webp(?:\?|$)/u.test(image.src) && (!image.dataset.pose || image.dataset.pose === 'editorial') && image.decoding === 'async')), `${label} should reuse only the asynchronously decoded editorial illustration.`);
+    check(await images.evaluateAll(items => items.every(image => getComputedStyle(image).animationName === 'none')), `${label} mascot art should remain static.`);
+  }
+  async function palette() {
+    const expected = { ink: '#29364f', muted: '#78808c', cream: '#fff8ee', orange: '#fb7852', gold: '#ffca51', teal: '#2ba99e', mint: '#d9eee7', line: '#e5ded2' };
+    const actual = await page.evaluate(keys => Object.fromEntries(keys.map(key => [key, getComputedStyle(document.documentElement).getPropertyValue('--' + key).trim().toLowerCase()])), Object.keys(expected));
+    check(JSON.stringify(actual) === JSON.stringify(expected), 'The exact v3 color palette should be restored.');
+    check(await t('profile-name').evaluate(input => getComputedStyle(input).backgroundColor === 'rgb(255, 255, 255)'), 'The profile input should retain its original white background.');
+  }
   async function probeLoader(reduceMotion) {
     const loaderContext = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, reducedMotion: reduceMotion ? 'reduce' : 'no-preference' });
+    // Observe the genuine parser-created intro; never delay requests, images,
+    // decoding, or timers just to force the intro to stay onscreen.
+    await loaderContext.addInitScript(() => {
+      window.__qaIntro = { samples: [], readyAt: null };
+      const snapshot = () => {
+        const boot = document.querySelector('main[data-screen="loading"]');
+        if (boot && window.__qaIntro.samples.length < 20) {
+          const nodes = [boot, ...boot.querySelectorAll('*')];
+          window.__qaIntro.samples.push({
+            at: performance.now(),
+            animations: nodes.map(node => getComputedStyle(node).animationName).filter(name => name !== 'none'),
+            images: [...boot.querySelectorAll('img')].map(image => ({ src: image.getAttribute('src'), decoding: image.decoding })),
+            runners: boot.querySelectorAll('[data-testid="mascot-runner"],.mascot-run,.run-streak').length,
+            width: innerWidth,
+            scroll: document.documentElement.scrollWidth,
+          });
+        }
+        if (document.querySelector('main[data-screen="profile"]')) {
+          window.__qaIntro.readyAt = performance.now();
+          observer.disconnect();
+        }
+      };
+      const observer = new MutationObserver(snapshot);
+      observer.observe(document, { childList: true, subtree: true });
+      addEventListener('DOMContentLoaded', snapshot, { once: true });
+    });
     const loaderPage = await loaderContext.newPage();
-    // Supply the real atlas immediately so the deliberate entry-image gate is
-    // the only pending bootstrap dependency, independent of CDN latency.
-    await loaderPage.route('**/assets/mascot-run.webp', route => route.fulfill({ path: path.resolve(__dirname, '../assets/mascot-run.webp'), contentType: 'image/webp' }));
+    const requests = [];
+    const loaderErrors = [];
+    loaderPage.on('request', request => requests.push(request.url()));
+    loaderPage.on('pageerror', error => loaderErrors.push(error.message));
+    loaderPage.on('console', message => { if (message.type() === 'error') loaderErrors.push(message.text()); });
+    try {
+      await loaderPage.goto(URL, { waitUntil: 'domcontentloaded' });
+      await loaderPage.locator('main[data-screen="profile"]').waitFor({ state: 'visible' });
+      const intro = await loaderPage.evaluate(() => window.__qaIntro);
+      check(intro.samples.length > 0, 'The real static intro should exist in the initial HTML.');
+      check(intro.samples.every(sample => sample.animations.length === 0), 'Intro and its children should have no CSS animation.');
+      check(intro.samples.every(sample => sample.runners === 0), 'The intro should contain no running sprite or speed-line UI.');
+      check(intro.samples.every(sample => sample.images.length > 0 && sample.images.every(image => image.src === 'assets/mascot-editorial.webp' && image.decoding === 'async')), 'Intro should use only the static editorial image with asynchronous decoding.');
+      check(intro.samples.every(sample => sample.scroll <= sample.width + 1), 'The static intro should fit a 320-pixel screen.');
+      check(Number.isFinite(intro.readyAt), 'Profile should open directly after bootstrap content becomes ready.');
+      const moduleSource = await loaderPage.evaluate(async () => {
+        const module = document.querySelector('script[type="module"]');
+        if (!module) throw new Error('No actual application module was declared.');
+        if (!module.src) return { mode: 'inline', source: module.textContent };
+        const response = await fetch(module.src);
+        if (!response.ok) throw new Error(`Application module ${module.src}: HTTP ${response.status}`);
+        return { mode: 'external', source: await response.text() };
+      });
+      const bootstrapStart = moduleSource.source.lastIndexOf('\nviewportChanged();');
+      check(bootstrapStart >= 0, 'Readiness checks should inspect the actual inline or declared external application module.');
+      const bootstrapSource = moduleSource.source.slice(bootstrapStart);
+      check(/new\s+ZincirState\s*\(/u.test(bootstrapSource), 'The inspected bootstrap should contain the real game-state initialization.');
+      check(!/\b(?:Image|decode|prepareEntryVisuals|warm)\b/u.test(bootstrapSource), 'Optional mascot artwork should never gate bootstrap or image decoding.');
+      check(!/\b(?:delay|setTimeout|setInterval|requestAnimationFrame)\s*\(/u.test(bootstrapSource), 'Bootstrap should have no fake minimum loading delay.');
+      check(await loaderPage.locator('link[rel="preload"]').evaluateAll(links => links.every(link => !/mascot-(?:run|think|cheer)/u.test(link.href))), 'No running sprite or old pose should be preloaded.');
+      await loaderPage.waitForLoadState('networkidle');
+      check(!requests.some(url => /\/assets\/mascot(?:-(?:run|think|cheer))?\.(?:png|webp)(?:\?|$)/u.test(url)), 'Static bootstrap should request no runner or former book/thinking/celebration pose.');
+      check(loaderErrors.length === 0, `Static bootstrap should have no runtime or HTTP console errors: ${loaderErrors.join('; ')}`);
+      bootstrapProbes.push({ reducedMotion: reduceMotion, sourceMode: moduleSource.mode, profileReadyMs: Math.round(intro.readyAt), staticIntroSamples: intro.samples.length, consoleErrors: loaderErrors, requestedFiles: requests });
+    } finally {
+      await loaderContext.close();
+    }
+  }
+  async function probeOptionalImageReadiness() {
+    const imageContext = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
+    const imagePage = await imageContext.newPage();
+    const editorialRequest = /\/assets\/mascot-editorial\.webp(?:\?.*)?$/u;
     let release;
-    let imageRequested;
+    let held = false;
+    let released = false;
     const gate = new Promise(resolve => { release = resolve; });
-    const seen = new Promise(resolve => { imageRequested = resolve; });
-    await loaderPage.route('**/assets/mascot-cheer.webp', async route => {
-      imageRequested();
+    const imageErrors = [];
+    imagePage.on('pageerror', error => imageErrors.push(error.message));
+    imagePage.on('console', message => { if (message.type() === 'error') imageErrors.push(message.text()); });
+    // This isolated regression probe holds only optional art. The real-intro
+    // observations and the complete gameplay flow use untouched networking.
+    await imagePage.route(editorialRequest, async route => {
+      held = true;
       await gate;
-      // Complete a known real image immediately after the gate. The full flow below
-      // separately fetches deployed assets; this probe isolates bootstrap readiness.
-      try { await route.fulfill({ path: path.resolve(__dirname, '../assets/mascot-cheer.webp'), contentType: 'image/webp' }); } catch { /* Context cleanup may cancel a held request. */ }
+      try { await route.continue(); } catch { /* Cleanup can cancel a pending request after a failed assertion. */ }
     });
     try {
-      const opened = Date.now();
-      await loaderPage.goto(URL, { waitUntil: 'commit' });
-      await loaderPage.locator('main.boot[data-screen="loading"]').waitFor({ state: 'visible' });
-      await Promise.race([seen, new Promise((_, reject) => setTimeout(() => reject(new Error('Expected selected entry-pose bootstrap request.')), 15000))]);
-      const runner = loaderPage.getByTestId('mascot-runner');
-      check(await runner.isVisible(), 'The actual loading screen should display the running mascot while a bootstrap image is delayed.');
-      check(await runner.evaluate(el => getComputedStyle(el).backgroundImage.includes('mascot-run.webp')), 'Loading should use the real eight-frame mascot atlas.');
-      const progress = await loaderPage.locator('#boot-progress').evaluate(el => ({ value: Number(el.getAttribute('aria-valuenow') ?? el.value), max: Number(el.getAttribute('aria-valuemax') ?? el.max) }));
-      check(progress.value >= 1 && progress.value < progress.max, 'Bootstrap progress should reflect completed work while the entry image remains pending.');
-      if (!reduceMotion && captureLoader) await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading-frame1.png') });
-      const before = await runner.evaluate(el => getComputedStyle(el).backgroundPosition);
-      await loaderPage.waitForTimeout(140);
-      const after = await runner.evaluate(el => getComputedStyle(el).backgroundPosition);
-      if (!reduceMotion && captureLoader) await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading-frame2.png') });
-      if (reduceMotion) {
-        check(before === after, 'Reduced motion should keep the loading mascot on a static frame.');
-      } else {
-        check(before !== after, 'The loading mascot should visibly advance through running frames.');
-        await loaderPage.evaluate(() => {
-          Object.defineProperty(document, 'hidden', { configurable: true, value: true });
-          document.dispatchEvent(new Event('visibilitychange'));
-        });
-        check(await runner.evaluate(el => getComputedStyle(el).animationPlayState.split(',').every(state => state.trim() === 'paused')), 'The runner should pause when document visibility becomes hidden.');
-        const paused = await runner.evaluate(el => getComputedStyle(el).backgroundPosition);
-        await loaderPage.waitForTimeout(120);
-        check(await runner.evaluate((el, position) => getComputedStyle(el).backgroundPosition === position, paused), 'Hidden loading animation should not keep advancing.');
-        await loaderPage.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
-        check(await runner.evaluate(el => getComputedStyle(el).animationPlayState.split(',').some(state => state.trim() === 'running')), 'The runner should resume when the document becomes visible.');
-      }
-      const loaderBounds = await loaderPage.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth }));
-      check(loaderBounds.scroll <= loaderBounds.width + 1, 'The loader should fit a 320-pixel screen.');
-      if (!reduceMotion && captureLoader) {
-        await loaderPage.waitForTimeout(Math.max(0, 800 - (Date.now() - opened)));
-        await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading.png') });
-      }
-      const released = Date.now();
+      const imageRequested = imagePage.waitForRequest(editorialRequest);
+      await imagePage.goto(URL, { waitUntil: 'domcontentloaded' });
+      await imageRequested;
+      await imagePage.locator('main[data-screen="profile"]').waitFor({ state: 'visible' });
+      check(held && !released, 'Profile should open while the real optional editorial request remains held.');
+      check(await imagePage.locator('main[data-screen="profile"] img.mascot').evaluate(image => !image.complete && image.naturalWidth === 0), 'Profile should render before its editorial illustration has loaded or decoded.');
+      const name = imagePage.getByTestId('profile-name');
+      await name.fill('Deniz');
+      check(await name.inputValue() === 'Deniz' && await imagePage.getByTestId('profile-submit').isEnabled() && await name.evaluate(input => input.form.checkValidity()), 'Profile input and continue control should be usable while mascot art is pending.');
+      const imageReady = imagePage.waitForResponse(response => editorialRequest.test(response.url()) && response.ok());
+      released = true;
       release();
-      await loaderPage.locator('main[data-screen="profile"]').waitFor({ state: 'visible' });
-      check(Date.now() - released < 500, 'Ready bootstrap work should open profile promptly without a minimum loading timer.');
-      const remaining = loaderPage.getByTestId('mascot-runner');
-      check(await remaining.count() === 0 || await remaining.evaluate(el => getComputedStyle(el).animationPlayState === 'paused'), 'The running sprite should stop when the loader is removed or hidden.');
+      await imageReady;
+      await imagePage.waitForLoadState('networkidle');
+      check(imageErrors.length === 0, `Optional-art readiness probe should have no runtime or HTTP console errors: ${imageErrors.join('; ')}`);
+      bootstrapProbes.push({ optionalImageHeld: true, profileUsableBeforeImage: true, consoleErrors: imageErrors });
     } finally {
       release();
-      await loaderContext.close();
+      await imageContext.close();
     }
   }
   try {
     await probeLoader(false);
     await probeLoader(true);
+    await probeOptionalImageReadiness();
     await page.goto(URL, { waitUntil: 'networkidle' });
     await waitScreen('profile');
     const initialLoadPayloadBytes = await page.evaluate(() => [...performance.getEntriesByType('navigation'), ...performance.getEntriesByType('resource')].reduce((sum, resource) => sum + (resource.encodedBodySize || 0), 0));
@@ -150,11 +206,13 @@ fs.mkdirSync(out, { recursive: true });
     const source = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../data/levels.json'), 'utf8'));
     check(content.levels.length === 40, 'Fast edition should expose all 40 levels.');
     check(JSON.stringify(content) === JSON.stringify(source), 'Fast web content should exactly match the Godot content.');
-    check(await page.locator('img[data-pose="cheer"]').count() > 0, 'Profile should display the joyful mascot pose.');
+    await editorialMascot('Profile');
+    await palette();
     await t('profile-name').fill('Gökçen');
     await t('profile-submit').click();
     await waitScreen('game');
-    check(await page.locator('img[data-pose="think"]').count() > 0, 'Tutorial should display the thinking mascot pose.');
+    await editorialMascot('Tutorial');
+    check(await page.locator('[data-testid="word-row"][data-mode="active"]').evaluate(row => getComputedStyle(row).backgroundColor === 'rgb(255, 255, 255)'), 'Active letter entry should retain its original white surface.');
     await submit('KAŞIK');
     check((await save()).progress.tutorial.activeIndex === 1, 'Bare stem should be rejected when the expected compound answer is KAŞIĞI.');
     await t('word-input').fill('');
@@ -174,7 +232,7 @@ fs.mkdirSync(out, { recursive: true });
     await submit(answer(content.tutorial, 2).slice(1));
     await submit(answer(content.tutorial, 3).slice(1));
     await waitScreen('win');
-    check(await page.locator('img[data-pose="cheer"]').count() > 0, 'Winning should display the celebrating mascot pose.');
+    await editorialMascot('Win');
     await page.waitForTimeout(220);
     await page.screenshot({ path: path.join(out, 'fast-web-win.png'), fullPage: true });
     let record = await save();
@@ -182,7 +240,7 @@ fs.mkdirSync(out, { recursive: true });
     await t('win-primary').click();
     await waitScreen('home');
     check(await page.locator('#toast').evaluate(toast => !toast.classList.contains('visible')), 'Navigation should clear a stale word-completion toast.');
-    check(await page.locator('img[src*="mascot.webp"]').count() > 0, 'Home logo and hero should use the droplet mascot.');
+    await editorialMascot('Home');
     check(await page.locator('img').evaluateAll(images => images.every(image => !/hero\.(?:png|webp)/iu.test(image.src))), 'Visible UI should contain no old SZC hero asset.');
     await layout('390 home');
     await contrast('home-play');
@@ -291,9 +349,10 @@ fs.mkdirSync(out, { recursive: true });
     const traffic = await page.evaluate(() => [...performance.getEntriesByType('navigation'), ...performance.getEntriesByType('resource')].reduce((sum, resource) => sum + (resource.encodedBodySize || 0), 0));
     check(![...fetched].some(url => /\.(wasm|pck)(?:\?|$)/u.test(url)), 'Lightweight public build should not request Godot runtime files.');
     check(![...fetched].some(url => /\/assets\/hero\.(?:png|webp)(?:\?|$)/iu.test(url)), 'Updated game should never request old SZC artwork.');
+    check(![...fetched].some(url => /\/assets\/mascot(?:-(?:run|think|cheer))?\.(?:png|webp)(?:\?|$)/u.test(url)), 'Every screen should avoid all former book/thinking/celebration/running mascot assets.');
     check(!/\bSZC\b/iu.test(await page.locator('body').innerText()), 'No stale SZC text should remain in the visible UI.');
     check(errors.length === 0, `Browser runtime errors: ${errors.join('; ')}`);
-    const report = { checks, failures: 0, initialLoadPayloadBytes, initialNetworkTransferBytes, lastNavigationPayloadBytes: traffic, criticalContrasts, consoleErrors: errors, requestedFiles: [...fetched] };
+    const report = { checks, failures: 0, initialLoadPayloadBytes, initialNetworkTransferBytes, lastNavigationPayloadBytes: traffic, bootstrapProbes, criticalContrasts, consoleErrors: errors, requestedFiles: [...fetched] };
     fs.writeFileSync(path.join(out, 'fast-web-flow.json'), JSON.stringify(report, null, 2));
     console.log(JSON.stringify(report, null, 2));
   } finally { await browser.close(); }

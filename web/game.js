@@ -6,7 +6,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 const icon = (name, cls='') => `<img class="icon ${cls}" src="assets/icons/${name}.svg" alt="" aria-hidden="true" width="28" height="28">`;
 const btn = (text, action, cls='', attrs='') => `<button type="button" class="btn ${cls}" data-action="${action}" ${attrs}>${text}</button>`;
 const tag = (text, cls='') => `<span class="tag ${cls}">${text}</span>`;
-const mascot = (cls='', alt='Bulmaca çözen mavi damla maskot', pose='book') => `<img class="mascot ${cls}" data-pose="${pose}" src="assets/mascot${pose==='book'?'':'-'+pose}.webp" alt="${alt}" width="192" height="192" decoding="async">`;
+const mascot = (cls='', alt='Gazetesindeki kelime bulmacasını çözen mavi damla maskot') => `<img class="mascot ${cls}" data-pose="editorial" src="assets/mascot-editorial.webp" alt="${alt}" width="512" height="512" decoding="async">`;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let state, screen='loading', category='Tümü', partyLevel, partyCount=0, lastResult={}, toastTimer, audio;
 let transitioning=false, transitionToken=0;
@@ -47,11 +47,11 @@ function available(level) {
 function categoryIcon(c) {return ({Mutfak:'chef',Spor:'ball','Doğa':'leaf','Kültür':'book'})[c]||'chain';}
 
 function profile() {
-  setScreen('profile',`<div class="stack">${mascot('profile-mascot','Seni selamlayan mavi damla','cheer')}${tag('KELİME KULÜBÜNE HOŞ GELDİN')}<h1>Sana ne diyelim?</h1><p>Bir isim seç, birlikte kelimelerin peşine düşelim.</p><form id="profile-form" class="stack"><label class="hidden" for="profile-name">Oyuncu adın</label><input class="name-input" id="profile-name" data-testid="profile-name" name="player" maxlength="18" minlength="2" placeholder="Oyuncu adın" autocomplete="off" required><button class="btn full" data-testid="profile-submit" type="submit">HADİ BAŞLAYALIM →</button></form><div class="coin-note">${icon('coin')}İlk 100 altının bizden!</div></div>`,'profile');
+  setScreen('profile',`<div class="stack">${mascot('profile-mascot','Gazetesiyle seni karşılayan mavi damla')}${tag('KELİME KULÜBÜNE HOŞ GELDİN')}<h1>Sana ne diyelim?</h1><p>Bir isim seç, birlikte kelimelerin peşine düşelim.</p><form id="profile-form" class="stack"><label class="hidden" for="profile-name">Oyuncu adın</label><input class="name-input" id="profile-name" data-testid="profile-name" name="player" maxlength="18" minlength="2" placeholder="Oyuncu adın" autocomplete="off" required><button class="btn full" data-testid="profile-submit" type="submit">HADİ BAŞLAYALIM →</button></form><div class="coin-note">${icon('coin')}İlk 100 altının bizden!</div></div>`,'profile');
 }
 function home() {
   const next=nextLevel();
-  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Defterler hazır. Sıradaki bağlantıyı birlikte bulalım!</p><div class="mini-chain"><div>${tag('ÇAY → K · · · · ·')}<p>Tamlamayı yaz.<br>Köküyle devam et.</p></div>${mascot('mini-mascot','')}</div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div>${mascot('home-mascot')}</section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','lock','Karşılıklı 1v1','Oda koduyla kelime yarışı. Gelecek bir güncellemede.','YAKINDA','online')}</div><div class="footnote">${icon('spark')}<span>Acele yok, süre yok. Sadece sen ve kelimeler.</span></div></div>`);
+  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Bir kelime, yeni bir bağlantı. Sıradakini birlikte bulalım!</p><div class="mini-chain"><div>${tag('ÇAY → K · · · · ·')}<p>Tamlamayı yaz.<br>Köküyle devam et.</p></div>${mascot('mini-mascot','')}</div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div>${mascot('home-mascot')}</section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','lock','Karşılıklı 1v1','Oda koduyla kelime yarışı. Gelecek bir güncellemede.','YAKINDA','online')}</div><div class="footnote">${icon('spark')}<span>Acele yok, süre yok. Sadece sen ve kelimeler.</span></div></div>`);
 }
 function modeCard(cls,ico,title,desc,label,action,attrs='') {
   return `<section class="mode-card panel ${cls}"><div class="row">${icon(ico)}<h3>${title}</h3></div><p>${desc}</p>${btn(label,action,'white small',attrs)}</section>`;
@@ -77,7 +77,7 @@ function game({focus=false,draft=null,scroll=false}={}) {
   const tips=['','Çay kaşığı! K hazır; kutulara AŞIĞI yaz. KAŞIĞI, kısa bir hareketle KAŞIK olacak.','Şimdi kaşık oyunu! O hazır; YUNU yaz. OYUNU → OYUN olacak ve zincir devam edecek.','Son bağlantı: oyun havası. H hazır; AVASI yaz. Tamlamayı doğal hâliyle tamamla!'];
   let chain='';
   l.words.forEach((w,i)=>{if(i>0)chain+=`<div class="connector ${i<state.activeIndex?'done':''}">${icon('chain')}<span>${i<state.activeIndex?esc(l.links[i-1]):i===state.activeIndex?esc(state.stemWord(i-1))+' + '+state.answerWord(i)[0]+'…':''}</span></div>`;chain+=i===state.activeIndex?`<section class="active-group">${wordRow(w,i)}${controls(tutorial)}</section>`:wordRow(w,i);});
-  setScreen('game',`${bar(tutorial?'Birlikte çözelim':l.category,true)}<section class="game-top"><div class="row spread">${tag(tutorial?'ALIŞTIRMA':'KELİME ZİNCİRİ')}<span class="small muted">${state.activeIndex} / ${l.words.length-1}</span></div><h1>${tutorial&&state.activeIndex===1?'İlk bağlantıyı kur.':'Zinciri devam ettir!'}</h1><div class="progress"><i style="width:${(state.activeIndex-1)/(l.words.length-1)*100}%"></i></div>${tutorial?`<div class="panel tutorial-tip mascot-tip">${mascot('tip-mascot','Bağlantıyı düşünen maskot','think')}<p>${tips[state.activeIndex]}</p></div>`:`<div class="panel mascot-tip play-tip">${mascot('tip-mascot','','think')}<p>Ekleriyle tamamla, köküyle devam et. Haydi, birlikte bulalım!</p></div>`}</section><div class="chain">${chain}</div><p class="game-footer">${tutorial?'İlk harfler bizden. Gerisi sende!':'Bölüm ödülü: 40 altın + 100 puan'}</p>`,'narrow',scroll);
+  setScreen('game',`${bar(tutorial?'Birlikte çözelim':l.category,true)}<section class="game-top"><div class="row spread">${tag(tutorial?'ALIŞTIRMA':'KELİME ZİNCİRİ')}<span class="small muted">${state.activeIndex} / ${l.words.length-1}</span></div><h1>${tutorial&&state.activeIndex===1?'İlk bağlantıyı kur.':'Zinciri devam ettir!'}</h1><div class="progress"><i style="width:${(state.activeIndex-1)/(l.words.length-1)*100}%"></i></div>${tutorial?`<div class="panel tutorial-tip mascot-tip">${mascot('tip-mascot','Gazetesindeki bulmacayı çözen maskot')}<p>${tips[state.activeIndex]}</p></div>`:`<div class="panel mascot-tip play-tip">${mascot('tip-mascot','')}<p>Ekleriyle tamamla, köküyle devam et. Haydi, birlikte bulalım!</p></div>`}</section><div class="chain">${chain}</div><p class="game-footer">${tutorial?'İlk harfler bizden. Gerisi sende!':'Bölüm ödülü: 40 altın + 100 puan'}</p>`,'narrow',scroll);
   const input=wordInput();
   if(draft)restoreDraft(draft);
   if(focus){input.focus({preventScroll:true});scrollActive();}
@@ -175,14 +175,14 @@ function joker(kind) {
 }
 function win() {
   const l=state.currentLevel,tutorial=l.id==='tutorial',next=nextLevel();
-  setScreen('win',`<div class="stack">${mascot('win-mascot','Başarına sevinen maskot','cheer')}${tag('BAĞLANTILAR TAMAM!')}<h1>İşte bu, zincir sende!</h1><p>${tutorial?'Artık hazırsın! Tamlamayı yaz, kelimenin köküyle devam et. Kendi kelime yolculuğuna başlayabilirsin.':'Bir bağlantı daha keşfettin. Kelime yolculuğun büyümeye devam ediyor.'}</p><section class="panel summary">${l.words.map((w,i)=>`<h3>${esc(w)}</h3>${l.links[i]?`<p>↳ ${esc(l.links[i])}</p>`:''}`).join('')}</section>${!tutorial?`<div class="rewards"><span class="row">${icon('coin')}+${lastResult.rewardGold||0} altın</span><span class="score">+${lastResult.rewardScore||0} puan</span></div>${!lastResult.rewardGold?'<p class="muted small">Bu bölümün ödülünü daha önce aldın. Yeni ödüller için yeni zincirleri çöz.</p>':''}`:''}${btn(tutorial?'ANA MENÜYE →':next?'SIRADAKİ ZİNCİR →':'ANA MENÜYE →',tutorial||!next?'home':'play','full','data-testid="win-primary"')}${tutorial&&next?btn('İLK ZİNCİRİ ÇÖZ','play','white full'):!tutorial?btn('BÖLÜMLERE DÖN','levels','white full'):''}</div>`,'win');
+  setScreen('win',`<div class="stack">${mascot('win-mascot','Bulmacasını tamamlayan mavi damla')}${tag('BAĞLANTILAR TAMAM!')}<h1>İşte bu, zincir sende!</h1><p>${tutorial?'Artık hazırsın! Tamlamayı yaz, kelimenin köküyle devam et. Kendi kelime yolculuğuna başlayabilirsin.':'Bir bağlantı daha keşfettin. Kelime yolculuğun büyümeye devam ediyor.'}</p><section class="panel summary">${l.words.map((w,i)=>`<h3>${esc(w)}</h3>${l.links[i]?`<p>↳ ${esc(l.links[i])}</p>`:''}`).join('')}</section>${!tutorial?`<div class="rewards"><span class="row">${icon('coin')}+${lastResult.rewardGold||0} altın</span><span class="score">+${lastResult.rewardScore||0} puan</span></div>${!lastResult.rewardGold?'<p class="muted small">Bu bölümün ödülünü daha önce aldın. Yeni ödüller için yeni zincirleri çöz.</p>':''}`:''}${btn(tutorial?'ANA MENÜYE →':next?'SIRADAKİ ZİNCİR →':'ANA MENÜYE →',tutorial||!next?'home':'play','full','data-testid="win-primary"')}${tutorial&&next?btn('İLK ZİNCİRİ ÇÖZ','play','white full'):!tutorial?btn('BÖLÜMLERE DÖN','levels','white full'):''}</div>`,'win');
 }
 function party(newChain=true) {
   if(newChain||!partyLevel){const choices=state.levels.filter(l=>l.id!==partyLevel?.id);partyLevel=choices[Math.floor(Math.random()*choices.length)];partyCount++;}
   setScreen('party',`${bar('Parti zamanı!',true)}<div class="stack"><div class="row spread">${tag('HEP BİRLİKTE OYNAYIN')}<span class="small muted">Zincir ${String(partyCount).padStart(2,'0')}</span></div><h1>Kelimeler masada.</h1><p>Sırayla bir kelime söyleyin, bağlantısını açıklayın. Yeni bir tur için zincire dokunun.</p><section class="panel outlined party-chain" data-action="party-next"><span class="eyebrow">${esc(partyLevel.category.toLocaleUpperCase('tr-TR'))}</span>${partyLevel.words.map((w,i)=>`${btn(esc(w),'party-next','full')}${partyLevel.links[i]?`<p class="party-link">↓ ${esc(partyLevel.links[i])}</p>`:''}`).join('')}</section>${btn('YENİ ZİNCİR ↻','party-next','full','data-testid="party-next"')}<p class="muted small">Parti modunda altın harcanmaz, ilerlemen değişmez. Telefonu arkadaşlarınla paylaşman yeterli.</p></div>`,'narrow');
 }
 function settings() {
-  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Tamlamayı ekleriyle yaz: SU + BARDAĞI gibi. Cevap kısa bir animasyonla BARDAK olur; sıradaki bağlantıyı bu kökle kur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.3</span></section></div>`,'narrow');
+  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Tamlamayı ekleriyle yaz: SU + BARDAĞI gibi. Cevap kısa bir animasyonla BARDAK olur; sıradaki bağlantıyı bu kökle kur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.4</span></section></div>`,'narrow');
 }
 function online() {
   setScreen('online',`${bar('Karşılıklı 1v1',true)}<div class="stack">${icon('lock')}${tag('GELECEK GÜNCELLEMEDE')}<h1>Dostça bir rekabet.</h1><p>Oda kodu, eş zamanlı başlangıç, canlı rakip skoru ve kısa mesajlar bu modun bir parçası olacak. Bu sürümde tek kişilik macera ve yüz yüze parti modu hazır.</p>${btn('MACERAYA DÖN →','home','full')}</div>`,'narrow');
@@ -221,34 +221,6 @@ function viewportChanged(){const vv=window.visualViewport;document.documentEleme
 window.visualViewport?.addEventListener('resize',viewportChanged);window.addEventListener('resize',viewportChanged);
 window.addEventListener('pagehide',()=>state?.saveLocal());
 
-function pageVisibility(){document.documentElement.classList.toggle('is-hidden',document.hidden);}
-document.addEventListener('visibilitychange',pageVisibility);
-pageVisibility();
-function loadingProgress(done,message){
-  const bar=document.querySelector('#boot-progress');
-  if(bar){bar.setAttribute('aria-valuenow',String(done));bar.querySelector('i').style.width=`${done/3*100}%`;}
-  const status=document.querySelector('#boot-status');if(status)status.textContent=message;
-}
-async function prepareEntryVisuals(){
-  let completed=1,timeout;
-  loadingProgress(completed,'Defter açılıyor…');
-  const pose=!state.profileName?'mascot-cheer':!state.tutorialDone?'mascot-think':'mascot';
-  const warm=path=>new Promise(resolve=>{
-    const img=new Image();
-    const done=()=>{completed++;loadingProgress(completed,completed===3?'Hazırız!':'Son kelimeler yerini alıyor…');resolve();};
-    img.onload=()=>{if(img.decode)img.decode().catch(()=>{}).then(done);else done();};
-    img.onerror=done;
-    img.src=path;
-  });
-  // Wait for real decoding, never a minimum animation timer. Slow optional art
-  // is allowed to continue loading after the game becomes interactive.
-  await Promise.race([
-    Promise.all([warm('assets/mascot-run.webp'),warm(`assets/${pose}.webp`)]),
-    new Promise(resolve=>{timeout=setTimeout(resolve,1400);})
-  ]);
-  clearTimeout(timeout);
-  if(!document.hidden)await new Promise(resolve=>requestAnimationFrame(resolve));
-}
 
 viewportChanged();
 try {
@@ -257,6 +229,5 @@ try {
 	if(embedded)content=JSON.parse(embedded.textContent);
 	else {const response=await fetch('data/levels.json');if(!response.ok)throw new Error(`Content ${response.status}`);content=await response.json();}
 	state=new ZincirState(content);
-  await prepareEntryVisuals();
   if(!state.profileName)profile();else if(!state.tutorialDone)startLevel('tutorial');else home();
 }catch(error){console.error(error);app.innerHTML=`<main class="boot"><h1>Kelimeler yüklenemedi.</h1><p>Bağlantını kontrol edip yeniden dene.</p><button class="btn" onclick="location.reload()">YENİDEN DENE</button></main>`;}

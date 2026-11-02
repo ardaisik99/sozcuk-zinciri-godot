@@ -2,6 +2,12 @@
 
 Bu klasör oyuna ait özgün ikonları, çizimi ve yerel fontları içerir. Oyun çalışırken dış font ya da görsel servisine bağlanmaz.
 
+## Güncel statik gazeteli maskot
+
+`mascot-editorial-source.png` ana çizimdir. `mascot-editorial.png` Godot için 512×512 RGBA, `mascot-editorial.webp` web için 512×512 alfa kanallı 29.980 bayt, `mascot-editorial-icon.png` 64×64 sekme simgesidir. Aynı statik çizim giriş, profil, menü, rehber ve sonuç ekranlarında kullanılır. Üretim istemi, özgün referans ve sıkıştırma ayrıntıları [gazeteli maskot notlarında](mascot-editorial-notes.md) kayıtlıdır. Eski kitaplı/düşünen/sevinen/koşan pozlar güncel web veya Godot oyun paketine alınmaz.
+
+## Arşiv: önceki görseller ve ortak fontlar
+
 - `mascot-source.png`: Kullanıcının verdiği `karakter.png` damla maskotu referans alınarak dahili ImageGen düzenlemesiyle oluşturulan özgün 1254×1254 RGBA ana çizim. Aynı turkuaz damla, lacivert oval gözleri ve gülümsemesiyle boş kelime kutuları olan bir defteri kalemle çözüyor. Görselde harf veya yazı yoktur.
 - `mascot.png`: Godot için ana çizimin alfa kanalı korunan 512×512 PNG kopyası; 174.117 bayt.
 - `mascot.webp`: Hızlı web için aynı çizimin alfa kanalı korunan 512×512 WebP kopyası; kalite 82, 27.250 bayt. İkon ve ana görsel aynı dosyayı paylaşır.
@@ -21,10 +27,10 @@ Fontlar Google Fonts'un resmi deposundan alınmıştır: [Baloo 2](https://githu
 
 Simge fontunun resmi kaynağı: [Noto Sans Math](https://github.com/google/fonts/tree/main/ofl/notosansmath). Noto Sans Symbols 2, temel okların tamamını içermediğinden tüm gerekli glifleri tek dosyada içeren Noto Sans Math seçilmiştir.
 
-## Ek maskot pozları ve koşu
+## Arşiv: önceki maskot pozları ve koşu
 
-- `mascot-think.png/.webp`: Düşünen poz; oyundaki rehber kartında kullanılır. WebP 17.240 bayt.
-- `mascot-cheer.png/.webp`: Selamlama ve kutlama pozu; profil ve sonuç ekranlarında kullanılır. WebP 15.594 bayt.
+- `mascot-think.png/.webp`: Arşivlenen düşünme pozu; güncel oyunda kullanılmaz. WebP 17.240 bayt.
+- `mascot-cheer.png/.webp`: Arşivlenen selamlama ve kutlama pozu; güncel oyunda kullanılmaz. WebP 15.594 bayt.
 - `mascot-run.png/.webp`: Sekiz farklı koşu karesi tek yatay şeritte; 1024×128, kareler 128×128, 10 FPS. WebP 32.670 bayt.
 - `mascot-run.json`: Godot koşu atlasının kare dikdörtgenleri ve zamanlaması.
 - Üretim istemleri ve mekanik sıkıştırma notları: [pozlar](mascot-pose-notes.md), [koşu](mascot-run-notes.md).
@@ -32,9 +38,9 @@ Simge fontunun resmi kaynağı: [Noto Sans Math](https://github.com/google/fonts
 
 ## Palet
 
-Krem `#fff2d5`, koyu mürekkep `#142d50`, mercan `#ff6538`, turkuaz `#39cdb8`, altın `#ffbe24`, mor `#b398ed`. Küçük metin ve odak halkaları için koyu turkuaz kullanılır.
+Krem `#fff8ee`, koyu mürekkep `#29364f`, mercan `#fb7852`, turkuaz `#2ba99e`, mint `#d9eee7`, altın `#ffca51`. Önceki sakin renk düzeni web ve Godot sürümlerinde aynıdır.
 
-## Güncel maskot üretim istemi
+## Arşiv: önceki kitaplı maskotun üretim istemi
 
 Use case: identity-preserve. Asset type: square transparent hero mascot for the Turkish word-chain puzzle game Sözcük Zinciri. Edit the exact supplied character into a new activity pose. The attached image is the identity reference: a cheerful turquoise water-droplet creature with one large recognizable pointed teardrop head and rounded body, two dark blue simple oval eyes, a small dark blue curved smile, tiny rounded stubby arms and feet. Preserve that exact silhouette, turquoise cyan body coloring, navy-blue outline, facial style and proportions. Do not invent a different character. Primary request: this exact droplet mascot is happily solving a word puzzle, standing or sitting in a three-quarter-front pose, holding an open warm cream puzzle notebook in front of its lower torso and a short chunky golden-yellow pencil in one hand, pencil tip touching the page. Its joyful face, teardrop point, both eyes, both arms and little feet must remain clearly recognizable and visible. The open notebook pages contain a few orderly empty square word-puzzle cells ONLY, with no letters or words at all. Make the notebook a modest supporting prop, with the face as focal point. Style: polished original casual mobile game 2D illustration, thick smooth dark navy outlines, clean rich cel shading, rounded toy-like shapes, turquoise highlights, gentle warm cream/gold accents on the notebook and pencil. Preserve source character identity rather than making it glossy 3D. Composition: compact central fullbody mascot and notebook, clean strong silhouette readable at 80px, square image with generous transparent margins, all parts in frame. Background: genuine transparency with alpha; remove the supplied white canvas and black rectangular area entirely. Constraints: no letters, no typography, no SZC, no alphabet tiles, no logo lettering, no text, no clothes or accessories other than the requested puzzle notebook and pencil, no additional characters, no confetti, no neon glow, no external backdrop, no watermark. Preserve the same friendly expression and original character identity.
 

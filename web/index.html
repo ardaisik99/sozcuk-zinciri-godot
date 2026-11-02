@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#ffca35">
+  <meta name="theme-color" content="#fff8ee">
   <meta name="description" content="Kelimeleri bağla, zinciri tamamla. Türkçe kelime bulmacası ve arkadaşlarınla parti modu.">
   <title>Sözcük Zinciri</title>
-  <link rel="icon" href="assets/mascot-icon.png" type="image/png">
-  <link rel="preload" as="image" href="assets/mascot-run.webp" fetchpriority="high">
+  <link rel="icon" href="assets/mascot-editorial-icon.png" type="image/png">
+  <link rel="preload" as="image" href="assets/mascot-editorial.webp">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app"><main class="boot" data-screen="loading" aria-labelledby="boot-title"><span class="tag">MACERA BAŞLIYOR</span><div class="loading-stage" aria-hidden="true"><i class="run-streak streak-one"></i><i class="run-streak streak-two"></i><i class="run-streak streak-three"></i><i class="runner-shadow"></i><span class="mascot-run" data-testid="mascot-runner"></span><i class="runner-floor"></i></div><h1 id="boot-title">SÖZCÜK<br>ZİNCİRİ</h1><p id="boot-status" role="status">Kelimeler yerini alıyor…</p><div class="loading-progress" id="boot-progress" role="progressbar" aria-label="Oyun hazırlanıyor" aria-valuemin="0" aria-valuemax="3" aria-valuenow="0"><i></i></div><p class="boot-caption">Bağlantıyı bul. Zinciri tamamla!</p></main></div>
+  <div id="app"><main class="boot" data-screen="loading" aria-labelledby="boot-title"><img class="mascot boot-mascot" src="assets/mascot-editorial.webp" alt="Gazetesindeki kelime bulmacasını çözen mavi damla maskot" width="512" height="512" decoding="async"><span class="tag">HER KELİME BİR BAĞLANTI</span><h1 id="boot-title">SÖZCÜK<br>ZİNCİRİ</h1><p role="status">Kelimeler hazırlanıyor…</p></main></div>
   <div id="toast" role="status" aria-live="polite"></div>
   <noscript>Bu oyunu oynamak için JavaScript'i etkinleştir.</noscript>
   <script type="module" src="game.js"></script>

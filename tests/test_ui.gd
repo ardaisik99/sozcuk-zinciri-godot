@@ -66,7 +66,6 @@ func check_layout(label: String) -> void:
 func click_word_input() -> void:
 	app.scroll.ensure_control_visible(app.active_row.edit)
 	await settle()
-
 	var position = app.active_row.edit.get_global_rect().get_center()
 	var motion = InputEventMouseMotion.new()
 	motion.position = position
@@ -82,11 +81,6 @@ func click_word_input() -> void:
 		await process_frame
 	await settle()
 
-func contrast(a: Color, b: Color) -> float:
-	var la = a.srgb_to_linear().get_luminance()
-	var lb = b.srgb_to_linear().get_luminance()
-	return (maxf(la, lb) + 0.05) / (minf(la, lb) + 0.05)
-
 func _run() -> void:
 	clean_files()
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
@@ -95,49 +89,20 @@ func _run() -> void:
 	app = MainScene.instantiate()
 	app.state = State.new(TEST_PATH, false)
 	root.add_child(app)
-	var runner = app.loading_runner
-	var runner_ref = weakref(runner)
-	check(app.screen == "loading" and is_instance_valid(runner), "Startup should create the loading-only mascot runner.")
-	check(runner.atlas_texture is AtlasTexture and runner.frame_rects.size() == 8, "Runner should use eight atlas frames from one shared texture.")
-	check(is_equal_approx(runner.frame_timer.wait_time, 0.1), "Loading runner should tick at ten FPS rather than processing per-frame animation.")
-	var regions = {}
-	var pixels = {}
-	var atlas_image = runner.atlas_texture.atlas.get_image()
-	for rect: Rect2 in runner.frame_rects:
-		regions[str(rect)] = true
-		var image = atlas_image.get_region(Rect2i(rect))
-		pixels[image.get_data().hex_encode().sha256_text()] = true
-	check(regions.size() == 8 and pixels.size() == 8, "All eight running frames should have distinct regions and distinct pixel content.")
-	await create_timer(0.21).timeout
-	check(runner.frame_index > 0 and runner.playing, "Visible loading runner should advance actual atlas frames.")
-	runner.set_app_paused(true)
-	var paused_frame = runner.frame_index
-	await create_timer(0.14).timeout
-	check(runner.frame_index == paused_frame and runner.frame_timer.is_stopped(), "Loading runner should stop timer work while application is paused.")
-	runner.set_app_paused(false)
-	await create_timer(0.12).timeout
-	check(runner.frame_index != paused_frame and runner.playing, "Visible loading runner should resume after the app resumes.")
-	runner.hide()
-	var hidden_frame = runner.frame_index
-	await create_timer(0.12).timeout
-	check(runner.frame_index == hidden_frame and not runner.playing, "Hidden runner should not continue advancing off screen.")
-	runner.show()
-	check(runner.playing, "Showing an active loading runner should restart its timer.")
-	await create_timer(1.3).timeout
+	check(app.screen == "loading", "Initial layout may show a static loading screen without holding an intro.")
+	var loading_art = app.stage.find_child("EditorialMascot", true, false)
+	check(is_instance_valid(loading_art) and loading_art is TextureRect, "The initial screen should use one static editorial mascot texture.")
+	check(get_processed_tweens().is_empty(), "The intro should not start movement, entrance or fake progress tweens.")
+	check(app.stage.find_children("*", "Timer", true, false).is_empty(), "The static intro should not create a running-frame timer.")
 	await settle()
-	check(app.loading_runner == null and runner_ref.get_ref() == null, "Leaving loading should free the runner and its timer completely.")
-	check(UI.ORANGE == Color("ff6538") and UI.TEAL == Color("12b7b0") and UI.CREAM == Color("fff2d5"), "Native UI should use the brighter warm orange/turquoise palette.")
-	for surface in [UI.CREAM, UI.ORANGE, UI.YELLOW, UI.TEAL, UI.MINT, UI.HERO, UI.SOLVED, UI.LILAC, UI.APRICOT]:
-		check(contrast(UI.INK, surface) >= 4.5, "Bright surfaces should preserve readable dark text contrast.")
-	check(contrast(UI.TEAL_INK, UI.MINT) >= 4.5 and contrast(UI.MUTED, UI.CREAM) >= 4.5, "Small colored and muted text should stay readable on warm and mint surfaces.")
-	check(app.screen == "profile", "Fresh session should open profile after loading.")
+	check(app.screen == "profile", "Profile should open as soon as initial controls are ready, without an intro delay.")
+	var expected_palette = {"INK": "29364f", "MUTED": "78808c", "CREAM": "fff8ee", "PAPER": "ffffff", "ORANGE": "fb7852", "YELLOW": "ffca51", "TEAL": "2ba99e", "MINT": "d9eee7", "PURPLE": "8370b6", "LINE": "e5ded2"}
+	var palette_script: Script = load("res://scripts/ui.gd")
+	for token in expected_palette:
+		check(palette_script.get_script_constant_map()[token] == Color(expected_palette[token]), "Native palette %s should match the original v3 color." % token)
 	var mascot = app._hero_art(96)
-	check(mascot.texture.resource_path == "res://assets/mascot.png", "Native hero art should load the new mascot PNG rather than the old letter tiles.")
+	check(mascot.texture.resource_path == "res://assets/mascot-editorial.png", "Every native mascot context should use the new static newspaper character.")
 	mascot.free()
-	for pose in ["think", "cheer"]:
-		var pose_art = app._hero_art(96, pose)
-		check(pose_art.texture.resource_path == "res://assets/mascot-%s.png" % pose, "Each mascot context should resolve its own optimized pose texture.")
-		pose_art.free()
 	check_layout("390 profile")
 	app.profile_input.text = " "
 	app._accept_profile()
@@ -147,8 +112,6 @@ func _run() -> void:
 	await settle()
 	check(app.screen == "game" and app.state.current_level.id == "tutorial", "Accepting name should start tutorial.")
 	check(app.state.profile_name == "Gökçen", "UI should save Turkish profile name.")
-	var guide_pose = app.stage.find_child("MascotThink", true, false)
-	check(is_instance_valid(guide_pose) and guide_pose.texture.resource_path.ends_with("mascot-think.png"), "The tutorial guide should use the thinking pose.")
 	check_layout("390 tutorial")
 	check(app.active_row.word == "KAŞIĞI" and app.active_row.cells.size() == 6, "Tutorial should request the six-letter inflected answer KAŞIĞI.")
 	var initial_gold = app.state.gold
@@ -171,14 +134,12 @@ func _run() -> void:
 	await enter_guess("yunu")
 	await enter_guess("avası")
 	check(app.screen == "win" and app.state.tutorial_done, "Tutorial should finish through cell inputs.")
-	var win_pose = app.stage.find_child("MascotCheer", true, false)
-	check(is_instance_valid(win_pose) and win_pose.texture.resource_path.ends_with("mascot-cheer.png"), "Completion should use the cheering pose.")
 	check(app.state.gold == 100 and app.state.score == 0, "Tutorial should preserve start gold without normal reward.")
 	find_button("ANA MENÜYE").pressed.emit()
 	await settle()
 	check(app.screen == "home", "Tutorial completion button should enter home.")
 	var brand_mascot = app.stage.find_child("BrandMascot", true, false)
-	check(is_instance_valid(brand_mascot) and brand_mascot.texture.resource_path == "res://assets/mascot.png", "The main topbar brand should use the same mascot identity.")
+	check(is_instance_valid(brand_mascot) and brand_mascot.texture.resource_path == "res://assets/mascot-editorial.png", "The main topbar brand should use the same static newspaper mascot.")
 	check_layout("390 home")
 	app._show_levels()
 	await settle()
@@ -191,6 +152,8 @@ func _run() -> void:
 	app._start_level("mutfak_01")
 	await settle()
 	check(app.screen == "game" and app.state.current_level.id == "mutfak_01", "Normal level should start.")
+	var game_mascot = app.stage.find_child("EditorialMascot", true, false)
+	check(is_instance_valid(game_mascot) and game_mascot.texture.resource_path == "res://assets/mascot-editorial.png", "Normal game guidance should include the same small static editorial mascot.")
 	var before = app.state.gold
 	var partial = app.state.current_word().substr(1, 2)
 	app.active_row.edit.text = partial

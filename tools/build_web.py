@@ -31,11 +31,13 @@ for name in ['.gdignore', '.nojekyll']:
 shutil.copy2(ROOT / 'data/levels.json', DEST / 'data/levels.json')
 (DEST / 'assets/fonts').mkdir(parents=True, exist_ok=True)
 (DEST / 'assets/icons').mkdir(parents=True, exist_ok=True)
-shutil.copy2(ROOT / 'assets/mascot.webp', DEST / 'assets/mascot.webp')
-shutil.copy2(ROOT / 'assets/mascot-icon.png', DEST / 'assets/mascot-icon.png')
-for name in ['mascot-think.webp', 'mascot-cheer.webp', 'mascot-run.webp']:
+for name in ['mascot-editorial.webp', 'mascot-editorial-icon.png']:
     shutil.copy2(ROOT / 'assets' / name, DEST / 'assets' / name)
-(DEST / 'assets/hero.webp').unlink(missing_ok=True)
+for name in ['hero.webp', 'mascot.webp', 'mascot-icon.png', 'mascot-think.webp',
+             'mascot-cheer.webp', 'mascot-run.webp']:
+    target = (DEST / 'assets' / name).resolve()
+    assert target.parent == (DEST / 'assets').resolve()
+    target.unlink(missing_ok=True)
 for name in ['Baloo2', 'Nunito', 'Symbols']:
     shutil.copy2(ROOT / f'assets/fonts/{name}.woff2', DEST / f'assets/fonts/{name}.woff2')
     shutil.copy2(ROOT / f'assets/fonts/{name}-OFL.txt', DEST / f'assets/fonts/{name}-OFL.txt')

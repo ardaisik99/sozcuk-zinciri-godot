@@ -21,17 +21,15 @@ func _run() -> void:
 	app.state.profile_name = "Arda"
 	app.state.tutorial_done = true
 	root.add_child(app)
-	await create_timer(1.4).timeout
+	for i in 4: await process_frame
 	OS.low_processor_usage_mode = false
 	await capture("menu-desktop.png")
 	root.size = Vector2i(390, 844)
 	await create_timer(0.4).timeout
 	app._show_loading()
-	await process_frame
-	app.loading_runner.set_app_paused(false)
-	await capture("loading-mobile-frame-a.png")
+	await capture("loading-static-mobile.png")
 	await create_timer(0.2).timeout
-	await capture("loading-mobile-frame-b.png")
+	await capture("loading-static-mobile-later.png")
 	app._show_home()
 	await capture("menu-mobile.png")
 	app._show_profile()

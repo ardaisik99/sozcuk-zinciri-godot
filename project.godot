@@ -6,9 +6,9 @@ config/name="Sözcük Zinciri"
 config/description="Bir kelime, yeni bir bağlantı. Türkçe kelime zinciri oyunu."
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://assets/mascot.png"
-boot_splash/image="res://assets/mascot.png"
-boot_splash/bg_color=Color(1, 0.9490196, 0.8352941, 1)
+config/icon="res://assets/mascot-editorial.png"
+boot_splash/image="res://assets/mascot-editorial.png"
+boot_splash/bg_color=Color(1, 0.972549, 0.9333333, 1)
 
 [display]
 window/size/viewport_width=480
@@ -24,7 +24,7 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
 textures/canvas_textures/default_texture_filter=2
-environment/defaults/default_clear_color=Color(1, 0.9490196, 0.8352941, 1)
+environment/defaults/default_clear_color=Color(1, 0.972549, 0.9333333, 1)
 renderer/rendering_method.web="gl_compatibility"
 
 [gui]
