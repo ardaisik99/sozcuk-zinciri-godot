@@ -11,6 +11,9 @@ var mode = "locked"
 var ordinal = 1
 var edit: LineEdit
 var cells: Array[Label] = []
+var letter_line: HBoxContainer
+var status_label: Label
+var answer_tween: Tween
 
 func _ready() -> void:
 	var active = mode == "active"
@@ -22,29 +25,18 @@ func _ready() -> void:
 	var top = U.row(8)
 	v.add_child(top)
 	top.add_child(U.label("%02d" % ordinal, 12, U.TEAL if solved else U.MUTED, true))
-	top.add_child(U.label("TAMAMLANDI" if solved else "SIRA SENDE · %d HARF" % word.length() if active else "%d HARF" % word.length(), 12, U.TEAL if solved else U.ORANGE if active else U.MUTED, true))
+	status_label = U.label("TAMAMLANDI" if solved else "SIRA SENDE · %d HARF" % word.length() if active else "%d HARF" % word.length(), 12, U.TEAL if solved else U.ORANGE if active else U.MUTED, true)
+	top.add_child(status_label)
 	top.add_child(U.expand())
 	top.add_child(U.icon("check" if solved else "arrow" if active else "lock", 18))
 	var entry_area = Control.new()
 	entry_area.custom_minimum_size.y = 46
 	v.add_child(entry_area)
-	var line = U.row(5)
-	line.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	entry_area.add_child(line)
-	for i in word.length():
-		var tile = PanelContainer.new()
-		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var bg = Color("f2c75f") if i == 0 and not solved else Color("c4e4d6") if solved else Color("f6f1e8") if active else Color("ebe6dc")
-		var style = U.box(bg, 7)
-		style.set_content_margin_all(0)
-		tile.add_theme_stylebox_override("panel", style)
-		var l = U.label("", 28 if word.length() < 9 else 22, U.INK, true)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		cells.append(l)
-		tile.add_child(l)
-		line.add_child(tile)
+	letter_line = U.row(5)
+	letter_line.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	letter_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	entry_area.add_child(letter_line)
+	_build_tiles()
 	if active:
 		edit = LineEdit.new()
 		edit.name = "WordInput"
@@ -66,6 +58,72 @@ func _ready() -> void:
 		edit.focus_entered.connect(func(): input_focused.emit())
 		entry_area.add_child(edit)
 	_update_letters()
+
+func _build_tiles() -> void:
+	cells.clear()
+	letter_line.add_theme_constant_override("separation", 5 if word.length() < 10 else 3)
+	for child in letter_line.get_children():
+		letter_line.remove_child(child)
+		child.queue_free()
+	for i in word.length():
+		var tile = PanelContainer.new()
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var solved = mode == "solved"
+		var bg = Color("f2c75f") if i == 0 and not solved else Color("c4e4d6") if solved else Color("f6f1e8") if mode == "active" else Color("ebe6dc")
+		var style = U.box(bg, 7)
+		style.set_content_margin_all(0)
+		tile.add_theme_stylebox_override("panel", style)
+		var font_size = 28 if word.length() < 9 else 22 if word.length() < 12 else 18 if word.length() < 15 else 15
+		var l = U.label("", font_size, U.INK, true)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cells.append(l)
+		tile.add_child(l)
+		letter_line.add_child(tile)
+
+func show_correct_answer(answer: String) -> void:
+	if is_instance_valid(edit):
+		edit.editable = false
+		edit.focus_mode = Control.FOCUS_NONE
+		edit.release_focus()
+		edit.hide()
+	word = answer
+	mode = "solved"
+	known.clear()
+	status_label.text = "DOĞRU CEVAP!"
+	status_label.add_theme_color_override("font_color", U.TEAL)
+	add_theme_stylebox_override("panel", U.box(Color("e1f1e9"), 18, U.TEAL, 2))
+	_build_tiles()
+	_update_letters()
+
+func animate_to_stem(stem: String, reduced_motion: bool = false) -> void:
+	if answer_tween and answer_tween.is_valid():
+		answer_tween.kill()
+	answer_tween = create_tween()
+	if reduced_motion:
+		answer_tween.tween_interval(0.38)
+		answer_tween.tween_callback(_show_stem.bind(stem))
+		return
+	answer_tween.tween_property(self, "modulate", Color("c4eee1"), 0.12)
+	answer_tween.tween_interval(0.15)
+	answer_tween.tween_property(letter_line, "modulate:a", 0.35, 0.12)
+	answer_tween.tween_callback(_show_stem.bind(stem))
+	answer_tween.tween_property(letter_line, "modulate:a", 1.0, 0.18)
+	answer_tween.tween_property(self, "modulate", Color.WHITE, 0.17)
+
+func _show_stem(stem: String) -> void:
+	word = stem
+	status_label.text = "ZİNCİRE HAZIR"
+	_build_tiles()
+	_update_letters()
+
+func cancel_animation() -> void:
+	if answer_tween and answer_tween.is_valid():
+		answer_tween.kill()
+	modulate = Color.WHITE
+	if is_instance_valid(letter_line):
+		letter_line.modulate = Color.WHITE
 
 func _upper(text: String) -> String:
 	return text.strip_edges().replace("i", "İ").replace("ı", "I").to_upper().replace(" ", "")

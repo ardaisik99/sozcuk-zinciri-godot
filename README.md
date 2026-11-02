@@ -6,6 +6,8 @@ Godot 4.7.2 ile hazırlanmış, Türkçe isim tamlamalarını bir zincirde birle
 
 5 kategoride 40 bölüm, adla profil oluşturma, uygulamalı öğretici, kalıcı ilerleme, altın, harf/tanım jokerleri ve yüz yüze parti modu hazırdır. Karşılıklı 1v1 menüde gelecek mod olarak gösterilir.
 
+v1.2'de kullanıcının mavi damla karakteri, elinde defter ve kalemle oyunun maskotu oldu. Önceki S/Z/C çizimi arayüzden kaldırıldı. Oyuncu tamlamayı doğal çekimiyle yazar: **SU + BARDAĞI**. Doğru cevap yaklaşık 0,75 saniyede **BARDAK** biçimine dönüşür; sonraki kelime bu kökten devam eder. Çekimli cevaplar tüm bölümlerde tek tek tanımlıdır. Web sürümü sistemin hareketi azaltma tercihini izler.
+
 ## Godot'ta çalıştırma
 
 Godot 4.7.2 Standard sürümünde `project.godot` dosyasını içe aktar ve **F5** ile çalıştır. .NET veya bir API anahtarı gerekmez. Mobil uyumlu portre düzeni masaüstünde de çalışır.
@@ -47,11 +49,13 @@ Hazır `docs/` çıktısını kullanarak derlemesiz yayınlamak istersen Pages S
 
 ## Oynanış ve kayıt
 
-İlk kelime açıktır. Sıradaki kelimenin ilk harfi hazırdır; kutuya dokunarak telefonunun veya bilgisayarının kendi klavyesiyle kalan harfleri yaz. Doğru cevapta sıradaki kelime açılır. Harf jokeri 20, tanım jokeri 15 altındır; ilk tamamlamada 40 altın ve 100 puan kazanılır. Tekrar oynamak sınırsız ödül vermez.
+İlk kelime açıktır. Sıradaki kelimenin ilk harfi hazırdır; kutuya dokunarak telefonunun veya bilgisayarının kendi klavyesiyle kalan harfleri, tamlamanın ekiyle birlikte yaz. Örneğin ÇAY için KAŞIĞI yazılır; ilk K hazır olduğundan AŞIĞI girmen yeterlidir. Cevap KAŞIK biçimine dönüşür, ardından OYUNU yazılır. Harf jokeri 20, tanım jokeri 15 altındır; ilk tamamlamada 40 altın ve 100 puan kazanılır. Tekrar oynamak sınırsız ödül vermez.
 
 Profil, altın, puan ve ilerleme cihazda kaydedilir. Web'de tarayıcı/site verilerini temizlemek kaydı siler; özel modda kalıcı kayıt tarayıcıya bağlıdır. İnternet bağlantılı 1v1 henüz etkin değildir. Parti modu aynı cihaz etrafında yüz yüze oynanır.
 
 Godot ve hızlı web sürümünün cihaz kayıtları ayrıdır; birindeki ilerleme diğerine otomatik aktarılmaz.
+
+Önceki sürümdeki bölüm ilerlemesi, puan, altın ve alınmış tanımlar korunur. Eski kök cevapta açılmış bir harf yeni çekimli biçimde değişmişse o harfin 20 altını bir kez iade edilir. Aynı kalan harfler açık kalır.
 
 ## Doğrulama
 
@@ -61,10 +65,10 @@ Godot ve hızlı web sürümünün cihaz kayıtları ayrıdır; birindeki ilerle
 node tools/test_web_state.mjs
 ```
 
-Yerel doğrulamada oyun mantığı için 361, arayüz için 74 kontrol geçti. Arayüz testleri 320–1440 piksel genişlikleri, uzun oyuncu adı, doğrudan kutuya yazma, kısa ekranda aktif alanın görünmesi, joker sırasında yazıyı koruma ve tekrar ödül korumasını kapsar. Chrome'da masaüstü ve dokunmatik mobil emülasyonuyla web yükleme/öğretici/kayıt testleri de yapılır. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
+v1.2 doğrulamasında Godot mantığı 789, Godot arayüzü 349, web mantığı 512 ve tarayıcı akışı 55 kontrolden geçti. Çekimli cevaplar, köke dönüşüm, tüm bölümlerin harf sayısı, eski kayıt göçü, dönüşüm sırasında art arda gönderim/joker engeli, ekrandan ayrılma, hareketi azaltma, mobil giriş ve 320–1440 piksel düzenler kontrol edildi. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
 
 Godot sürümü Compatibility renderer kullanır. Hızlı web sürümü yerel WebP/WOFF2 dosyaları ve küçük SVG simgeler kullanır. Android/iOS imzalama veya mağaza paketleri bu teslimata dahil değildir; mobil tarayıcı sürümü doğrudan test edilebilir.
 
-Hızlı web HTML dosyası yaklaşık 60 KB (gzip yaklaşık 19 KB), kopyalanan görsel ve fontların tamamı yaklaşık 138 KB'dır. HTML içindeki oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Godot arayüzünde sürekli çalışan görsel efektler yoktur; hareketsiz ekranlarda düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
+Hızlı web HTML dosyası yaklaşık 69 KB (gzip yaklaşık 21 KB), kopyalanan görsel ve fontların tamamı yaklaşık 135 KB'dır. Web maskotu yalnızca 27 KB'dır ve ekranlar aynı dosyayı paylaşır. HTML içindeki oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Efektler yalnızca cevapta kısa süre çalışır; sürekli parçacık, video veya animasyon döngüsü yoktur. Godot'un hareketsiz ekranlarında düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
 
 Godot: [resmi indirme](https://godotengine.org/download/windows/), [web dışa aktarma belgesi](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html).

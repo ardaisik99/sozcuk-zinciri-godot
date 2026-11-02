@@ -28,7 +28,25 @@ func _run() -> void:
 	await create_timer(0.4).timeout
 	app._show_home()
 	await capture("menu-mobile.png")
+	app._show_profile()
+	await capture("profile-mobile.png")
+	app._start_tutorial()
+	await capture("tutorial-inflected.png")
+	app.active_row.edit.text = "AŞIĞI"
+	app.active_row.edit.text_changed.emit("AŞIĞI")
+	app.active_row.edit.text_submitted.emit("AŞIĞI")
+	await capture("tutorial-correct-answer.png")
+	await create_timer(0.38).timeout
+	await capture("tutorial-stem-transform.png")
+	while app.transition_busy: await process_frame
+	while app.screen == "game":
+		app.active_row.edit.text = app.state.current_word()
+		app.active_row.edit.text_submitted.emit(app.state.current_word())
+		while app.transition_busy: await process_frame
+	await capture("win-mobile.png")
 	app._start_level("mutfak_01")
+	for i in 6: await process_frame
+	app.scroll.scroll_vertical = 0
 	await capture("game-mobile.png")
 	app.active_row.edit.grab_focus()
 	root.size = Vector2i(390, 420)

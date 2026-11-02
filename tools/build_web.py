@@ -31,7 +31,9 @@ for name in ['.gdignore', '.nojekyll']:
 shutil.copy2(ROOT / 'data/levels.json', DEST / 'data/levels.json')
 (DEST / 'assets/fonts').mkdir(parents=True, exist_ok=True)
 (DEST / 'assets/icons').mkdir(parents=True, exist_ok=True)
-shutil.copy2(ROOT / 'assets/hero.webp', DEST / 'assets/hero.webp')
+shutil.copy2(ROOT / 'assets/mascot.webp', DEST / 'assets/mascot.webp')
+shutil.copy2(ROOT / 'assets/mascot-icon.png', DEST / 'assets/mascot-icon.png')
+(DEST / 'assets/hero.webp').unlink(missing_ok=True)
 for name in ['Baloo2', 'Nunito', 'Symbols']:
     shutil.copy2(ROOT / f'assets/fonts/{name}.woff2', DEST / f'assets/fonts/{name}.woff2')
     shutil.copy2(ROOT / f'assets/fonts/{name}-OFL.txt', DEST / f'assets/fonts/{name}-OFL.txt')

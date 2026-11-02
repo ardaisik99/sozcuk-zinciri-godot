@@ -27,9 +27,19 @@ func settle() -> void:
 		await process_frame
 
 func enter_guess(text: String) -> void:
+	submit_now(text)
+	await finish_transition()
+
+func submit_now(text: String) -> void:
 	app.active_row.edit.text = text
 	app.active_row.edit.text_changed.emit(text)
 	app.active_row.edit.text_submitted.emit(text)
+
+func finish_transition() -> void:
+	var deadline = Time.get_ticks_msec() + 1800
+	while app.transition_busy and Time.get_ticks_msec() < deadline:
+		await process_frame
+	check(not app.transition_busy, "Correct-word transition should finish within its short time budget.")
 	await settle()
 
 func all_buttons(node: Node) -> Array[Button]:
@@ -81,6 +91,9 @@ func _run() -> void:
 	await create_timer(1.3).timeout
 	await settle()
 	check(app.screen == "profile", "Fresh session should open profile after loading.")
+	var mascot = app._hero_art(96)
+	check(mascot.texture.resource_path == "res://assets/mascot.png", "Native hero art should load the new mascot PNG rather than the old letter tiles.")
+	mascot.free()
 	check_layout("390 profile")
 	app.profile_input.text = " "
 	app._accept_profile()
@@ -91,18 +104,33 @@ func _run() -> void:
 	check(app.screen == "game" and app.state.current_level.id == "tutorial", "Accepting name should start tutorial.")
 	check(app.state.profile_name == "Gökçen", "UI should save Turkish profile name.")
 	check_layout("390 tutorial")
+	check(app.active_row.word == "KAŞIĞI" and app.active_row.cells.size() == 6, "Tutorial should request the six-letter inflected answer KAŞIĞI.")
 	var initial_gold = app.state.gold
 	await enter_guess("yanlış")
 	check(app.state.active_index == 1 and app.state.gold == initial_gold, "Wrong tutorial guess must not advance or spend gold.")
 	await enter_guess("aşık")
-	check(app.state.active_index == 2, "Typing tutorial suffix into cells should advance word.")
-	await enter_guess("yun")
-	await enter_guess("ava")
+	check(app.state.active_index == 1 and not app.transition_busy, "The bare stem KAŞIK must not solve the requested inflected answer.")
+	submit_now("aşığı")
+	check(app.transition_busy and app.active_row.word == "KAŞIĞI" and not app.active_row.edit.editable, "A correct answer should remain visible and lock input during its transition.")
+	check(app.active_link.text == "Çay kaşığı", "A correct answer should display the natural linked phrase above its animated row.")
+	check(app.state.active_index == 2 and app.state.gold == initial_gold, "Correct answer should commit once before presentation animation.")
+	app._submit("OYUNU")
+	app._reveal()
+	app._hint()
+	check(app.state.active_index == 2 and app.state.gold == initial_gold, "Double-submit and jokers during transition must not advance or spend gold.")
+	await create_timer(0.50).timeout
+	check(app.transition_busy and app.active_row.word == "KAŞIK" and app.active_row.cells.size() == 5, "The short animation should transform KAŞIĞI into the five-letter stem KAŞIK.")
+	await finish_transition()
+	check(app.active_row.word == "OYUNU" and app.active_row.cells.size() == 5, "Next answer should use the inflected form OYUNU.")
+	await enter_guess("yunu")
+	await enter_guess("avası")
 	check(app.screen == "win" and app.state.tutorial_done, "Tutorial should finish through cell inputs.")
 	check(app.state.gold == 100 and app.state.score == 0, "Tutorial should preserve start gold without normal reward.")
 	find_button("ANA MENÜYE").pressed.emit()
 	await settle()
 	check(app.screen == "home", "Tutorial completion button should enter home.")
+	var brand_mascot = app.stage.find_child("BrandMascot", true, false)
+	check(is_instance_valid(brand_mascot) and brand_mascot.texture.resource_path == "res://assets/mascot.png", "The main topbar brand should use the same mascot identity.")
 	check_layout("390 home")
 	app._show_levels()
 	await settle()
@@ -141,10 +169,18 @@ func _run() -> void:
 	for i in target.length():
 		if shown[i].is_empty():
 			hidden += target[i]
-	await enter_guess(hidden.to_lower())
+	await enter_guess(hidden.replace("I", "ı").replace("İ", "i").to_lower())
 	check(app.state.active_index == 2, "After joker, only hidden letters entered in cells should solve word.")
 	while app.screen == "game":
-		await enter_guess(app.state.current_word())
+		if app.state.active_index == app.state.current_level.words.size() - 1:
+			submit_now(app.state.current_word())
+			var awarded_gold = app.state.gold
+			var awarded_score = app.state.score
+			app._submit(app.state.current_word())
+			check(app.state.gold == awarded_gold and app.state.score == awarded_score, "Double-submit on the final animated answer must not duplicate rewards.")
+			await finish_transition()
+		else:
+			await enter_guess(app.state.current_word())
 	check(app.screen == "win" and "mutfak_01" in app.state.completed, "Finishing all words should show win and mark completion.")
 	check(app.state.gold == 105 and app.state.score == 100, "Normal UI completion should give exactly 40 gold and 100 score.")
 	app._start_level("mutfak_01")
@@ -152,6 +188,22 @@ func _run() -> void:
 	while app.screen == "game":
 		await enter_guess(app.state.current_word())
 	check(app.state.gold == 105 and app.state.score == 100, "Replaying via UI should not duplicate rewards.")
+	app._start_level("mutfak_01")
+	await settle()
+	submit_now(app.state.current_word())
+	app._show_home()
+	check(not app.transition_busy and app.screen == "home", "Navigation should cancel only the transient word animation.")
+	check(app.toast_layer.get_child_count() == 0, "Navigation should clear transient feedback from the previous chain.")
+	await create_timer(0.9).timeout
+	check(app.screen == "home", "A cancelled animation must not reopen the game after navigation.")
+	app._start_level("mutfak_01")
+	await settle()
+	submit_now(app.state.current_word())
+	var committed_index = app.state.active_index
+	app._notification(Node.NOTIFICATION_APPLICATION_PAUSED)
+	check(not app.transition_busy and app.screen == "game" and app.active_row.word == app.state.current_word(), "Pausing should settle a committed answer into the next editable row.")
+	await create_timer(0.9).timeout
+	check(app.state.active_index == committed_index, "Resuming after a cancelled transition must not submit the next answer.")
 	app._show_party(true)
 	await settle()
 	var old_party_id = app.party_level.id
@@ -171,6 +223,14 @@ func _run() -> void:
 		check_layout("%s normal game" % viewport_size)
 	root.size = Vector2i(320, 568)
 	await settle()
+	for level in app.state.levels:
+		app.state.begin_level(level.id)
+		for i in range(1, level.words.size()):
+			app.state.active_index = i
+			app._show_game()
+			await settle()
+			check_layout("320 inflected %s answer %s" % [level.id, app.state.current_word()])
+			check(app.active_row.word == app.state.answer_word(i) and app.active_row.cells.size() == app.state.answer_word(i).length(), "Every active row should expose the inflected answer's exact tile count.")
 	app.state.profile_name = "Abcdefghijklmnopqr"
 	app._show_home()
 	await settle()

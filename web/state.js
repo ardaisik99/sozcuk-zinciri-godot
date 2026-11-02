@@ -5,6 +5,7 @@ export const HINT_COST = 15;
 export const LEVEL_GOLD = 40;
 export const LEVEL_SCORE = 100;
 export const SAVE_KEY = 'sozcuk_zinciri_v1';
+export const ANSWER_SCHEMA = 2;
 
 export function normalizeTurkish(value) {
   return String(value ?? '').trim().replaceAll('i', 'İ').replaceAll('ı', 'I')
@@ -21,6 +22,9 @@ const storageDefault = () => { try { return globalThis.localStorage ?? null; } c
 const validLevel = level => object(level) && typeof level.id === 'string' && level.id
   && Array.isArray(level.words) && level.words.length >= 4 && level.words.length <= 5
   && level.words.every(word => typeof word === 'string' && word && normalizeTurkish(word) === word)
+  && Array.isArray(level.answers) && level.answers.length === level.words.length
+  && level.answers.every(word => typeof word === 'string' && word && normalizeTurkish(word) === word)
+  && level.answers[0] === level.words[0]
   && Array.isArray(level.definitions) && level.definitions.length === level.words.length
   && Array.isArray(level.links) && level.links.length === level.words.length - 1;
 
@@ -88,7 +92,17 @@ export class ZincirState {
   }
 
   currentWord() {
-    return this.currentLevel.words?.[this.activeIndex] ?? '';
+    return this.answerWord();
+  }
+
+  answerWord(wordIndex = -1) {
+    const index = wordIndex < 0 ? this.activeIndex : wordIndex;
+    return this.currentLevel.answers?.[index] ?? '';
+  }
+
+  stemWord(wordIndex = -1) {
+    const index = wordIndex < 0 ? this.activeIndex : wordIndex;
+    return this.currentLevel.words?.[index] ?? '';
   }
 
   currentDefinition() {
@@ -97,7 +111,7 @@ export class ZincirState {
 
   visibleLetters(wordIndex = -1) {
     const index = wordIndex < 0 ? this.activeIndex : wordIndex;
-    const word = this.currentLevel.words?.[index];
+    const word = index < this.activeIndex ? this.stemWord(index) : this.answerWord(index);
     if (!word) return [];
     const positions = this.revealed[String(index)] ?? [];
     return [...word].map((letter, position) => index < this.activeIndex || position === 0 || positions.includes(position) ? letter : '');
@@ -112,6 +126,8 @@ export class ZincirState {
     if (guess !== word && word[0] + guess !== word && guess !== hidden) {
       return { ok: false, complete: false, reason: 'incorrect', word: '', rewardGold: 0, rewardScore: 0 };
     }
+    const solvedIndex = this.activeIndex;
+    const stem = this.stemWord();
     this.activeIndex += 1;
     let rewardGold = 0;
     let rewardScore = 0;
@@ -127,7 +143,7 @@ export class ZincirState {
       }
     }
     this.saveLocal();
-    return { ok: true, complete: this.isComplete(), reason: '', word, rewardGold, rewardScore };
+    return { ok: true, complete: this.isComplete(), reason: '', word, stem, solvedIndex, rewardGold, rewardScore };
   }
 
   revealLetter() {
@@ -160,6 +176,7 @@ export class ZincirState {
 
   _storeCurrent() {
     if (this.currentLevel.id) this.progress[this.currentLevel.id] = {
+      answerSchema: ANSWER_SCHEMA,
       activeIndex: this.activeIndex,
       revealed: clone(this.revealed),
       hintUsed: clone(this.hintUsed),
@@ -195,6 +212,10 @@ export class ZincirState {
     try { data = this._parse(this.storage.getItem(SAVE_KEY)) ?? this._parse(this.storage.getItem(SAVE_KEY + '.bak')); }
     catch { return false; }
     if (!data) return false;
+    this.currentLevel = {};
+    this.activeIndex = 1;
+    this.revealed = {};
+    this.hintUsed = {};
     this.profileName = String(data.profileName ?? '').trim().slice(0, 18);
     this.gold = integer(data.gold, START_GOLD);
     this.score = integer(data.score);
@@ -202,19 +223,30 @@ export class ZincirState {
     this.completed = Array.isArray(data.completed) ? [...new Set(data.completed.filter(id => id !== 'tutorial' && this.findLevel(id).words))] : [];
     if (object(data.settings)) this.settings = { sound: data.settings.sound !== false, haptics: data.settings.haptics !== false };
     this.progress = {};
+    let migrated = false;
     if (object(data.progress)) for (const [id, entry] of Object.entries(data.progress)) {
       const level = this.findLevel(id);
       if (!level.words || !object(entry)) continue;
       const activeIndex = Math.max(1, integer(entry.activeIndex, 1, level.words.length));
       const revealed = {};
       const hintUsed = {};
+      const legacy = entry.answerSchema !== ANSWER_SCHEMA;
+      if (legacy) migrated = true;
       for (let index = 1; index < level.words.length; index++) {
         const positions = entry.revealed?.[String(index)];
-        revealed[String(index)] = Array.isArray(positions) ? [...new Set(positions.filter(position => Number.isInteger(position) && position > 0 && position < level.words[index].length))] : [];
+        const oldWord = legacy ? level.words[index] : level.answers[index];
+        const paidPositions = Array.isArray(positions) ? [...new Set(positions.filter(position => Number.isInteger(position) && position > 0 && position < oldWord.length))] : [];
+        revealed[String(index)] = paidPositions.filter(position => {
+          if (!legacy || oldWord[position] === level.answers[index][position]) return true;
+          this.gold = Math.min(99999999, this.gold + LETTER_COST);
+          return false;
+        });
         hintUsed[String(index)] = entry.hintUsed?.[String(index)] === true;
       }
-      this.progress[id] = { activeIndex, revealed, hintUsed };
+      this.progress[id] = { answerSchema: ANSWER_SCHEMA, activeIndex, revealed, hintUsed };
     }
+    // Commit refunds together with the schema marker before another reload.
+    if (migrated) this.saveLocal();
     return true;
   }
 

@@ -7,6 +7,7 @@ const LETTER_COST := 20
 const HINT_COST := 15
 const LEVEL_GOLD := 40
 const LEVEL_SCORE := 100
+const ANSWER_SCHEMA := 2
 const SAVE_PATH := "user://zincir_save.json"
 const CONTENT_PATH := "res://data/levels.json"
 
@@ -58,15 +59,21 @@ func _valid_level(level: Variant) -> bool:
 	if not level is Dictionary:
 		return false
 	var words: Variant = level.get("words", [])
+	var answers: Variant = level.get("answers", [])
 	var definitions: Variant = level.get("definitions", [])
 	var links: Variant = level.get("links", [])
-	if not (level.get("id", "") is String and not str(level.get("id", "")).is_empty() and words is Array and definitions is Array and links is Array):
+	if not (level.get("id", "") is String and not str(level.get("id", "")).is_empty() and words is Array and answers is Array and definitions is Array and links is Array):
 		return false
-	if words.size() < 4 or words.size() > 5 or definitions.size() != words.size() or links.size() != words.size() - 1:
+	if words.size() < 4 or words.size() > 5 or answers.size() != words.size() or definitions.size() != words.size() or links.size() != words.size() - 1:
 		return false
 	for word: Variant in words:
 		if not word is String or word.is_empty() or normalize(word) != word:
 			return false
+	for answer: Variant in answers:
+		if not answer is String or answer.is_empty() or normalize(answer) != answer:
+			return false
+	if answers[0] != words[0]:
+		return false
 	return true
 
 
@@ -118,9 +125,21 @@ func is_complete() -> bool:
 
 
 func current_word() -> String:
-	if current_level.is_empty() or is_complete():
+	return answer_word()
+
+
+func answer_word(word_index: int = -1) -> String:
+	var index := active_index if word_index < 0 else word_index
+	if current_level.is_empty() or index < 0 or index >= current_level["answers"].size():
 		return ""
-	return str(current_level["words"][active_index])
+	return str(current_level["answers"][index])
+
+
+func stem_word(word_index: int = -1) -> String:
+	var index := active_index if word_index < 0 else word_index
+	if current_level.is_empty() or index < 0 or index >= current_level["words"].size():
+		return ""
+	return str(current_level["words"][index])
 
 
 func current_definition() -> String:
@@ -136,7 +155,7 @@ func visible_letters(word_index: int = -1) -> Array[String]:
 	var index := active_index if word_index < 0 else word_index
 	if index < 0 or index >= current_level["words"].size():
 		return result
-	var word := str(current_level["words"][index])
+	var word := stem_word(index) if index < active_index else answer_word(index)
 	var shown: Variant = revealed.get(str(index), [])
 	for i in word.length():
 		result.append(word[i] if index < active_index or i == 0 or (shown is Array and i in shown) else "")
@@ -159,6 +178,8 @@ func submit_guess(text: String) -> Dictionary:
 		accepted = guess == hidden
 	if not accepted:
 		return {"ok": false, "complete": false, "reason": "incorrect", "word": "", "reward_gold": 0, "reward_score": 0}
+	var solved_index := active_index
+	var stem := stem_word()
 	active_index += 1
 	var reward_gold := 0
 	var reward_score := 0
@@ -174,7 +195,7 @@ func submit_guess(text: String) -> Dictionary:
 			score += reward_score
 	_store_current()
 	save_game()
-	return {"ok": true, "complete": is_complete(), "word": target, "reward_gold": reward_gold, "reward_score": reward_score}
+	return {"ok": true, "complete": is_complete(), "word": target, "stem": stem, "solved_index": solved_index, "reward_gold": reward_gold, "reward_score": reward_score}
 
 
 func reveal_letter() -> Dictionary:
@@ -219,7 +240,7 @@ func buy_hint() -> Dictionary:
 
 func _store_current() -> void:
 	if not current_level.is_empty():
-		progress[str(current_level["id"])] = {"active_index": active_index, "revealed": revealed.duplicate(true), "hint_used": hint_used.duplicate(true)}
+		progress[str(current_level["id"])] = {"answer_schema": ANSWER_SCHEMA, "active_index": active_index, "revealed": revealed.duplicate(true), "hint_used": hint_used.duplicate(true)}
 
 
 func save_game() -> bool:
@@ -254,6 +275,10 @@ func load_save() -> bool:
 		data = _read_save(save_path + ".bak")
 	if not data is Dictionary:
 		return false
+	current_level = {}
+	active_index = 1
+	revealed = {}
+	hint_used = {}
 	profile_name = str(data.get("profile_name", "")).left(18).strip_edges()
 	gold = clampi(_safe_int(data.get("gold", START_GOLD), START_GOLD), 0, 99999999)
 	score = clampi(_safe_int(data.get("score", 0), 0), 0, 99999999)
@@ -267,6 +292,7 @@ func load_save() -> bool:
 		var saved_settings: Dictionary = data.get("settings", {})
 		settings = {"sound": bool(saved_settings.get("sound", true)), "haptics": bool(saved_settings.get("haptics", true))}
 	progress = {}
+	var migrated := false
 	if data.get("progress", {}) is Dictionary:
 		for id: Variant in data.get("progress", {}):
 			var level := find_level(str(id))
@@ -276,18 +302,32 @@ func load_save() -> bool:
 			var index := clampi(_safe_int(entry.get("active_index", 1), 1), 1, level["words"].size())
 			var safe_revealed: Dictionary = {}
 			var safe_hints: Dictionary = {}
+			var legacy := _safe_int(entry.get("answer_schema", 1), 1) != ANSWER_SCHEMA
+			if legacy:
+				migrated = true
 			for wi in range(1, level["words"].size()):
 				var key := str(wi)
 				var positions: Array[int] = []
+				var seen_positions: Array[int] = []
+				var old_word := str(level["words"][wi]) if legacy else str(level["answers"][wi])
+				var new_word := str(level["answers"][wi])
 				var source: Variant = entry.get("revealed", {})
 				if source is Dictionary and source.get(key, []) is Array:
 					for pos: Variant in source.get(key, []):
-						if (pos is int or pos is float) and int(pos) > 0 and int(pos) < str(level["words"][wi]).length() and int(pos) not in positions:
-							positions.append(int(pos))
+						if (pos is int or pos is float) and int(pos) == pos and int(pos) > 0 and int(pos) < old_word.length() and int(pos) not in seen_positions:
+							var position := int(pos)
+							seen_positions.append(position)
+							if not legacy or (position < new_word.length() and old_word[position] == new_word[position]):
+								positions.append(position)
+							else:
+								gold = mini(99999999, gold + LETTER_COST)
 				safe_revealed[key] = positions
 				var hints: Variant = entry.get("hint_used", {})
 				safe_hints[key] = hints is Dictionary and bool(hints.get(key, false))
-			progress[str(id)] = {"active_index": index, "revealed": safe_revealed, "hint_used": safe_hints}
+			progress[str(id)] = {"answer_schema": ANSWER_SCHEMA, "active_index": index, "revealed": safe_revealed, "hint_used": safe_hints}
+	# Şema işareti ve iadeler birlikte kaydedilir; yeniden açılış tekrar altın vermez.
+	if migrated:
+		save_game()
 	return true
 
 

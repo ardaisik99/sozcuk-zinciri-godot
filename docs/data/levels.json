@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "tutorial": {
     "id": "tutorial",
     "category": "Öğretici",
@@ -20,6 +20,12 @@
       "Çay kaşığı",
       "Kaşık oyunu",
       "Oyun havası"
+    ],
+    "answers": [
+      "ÇAY",
+      "KAŞIĞI",
+      "OYUNU",
+      "HAVASI"
     ]
   },
   "levels": [
@@ -43,6 +49,12 @@
         "Kahve fincanı",
         "Fincan takımı",
         "Takım çantası"
+      ],
+      "answers": [
+        "KAHVE",
+        "FİNCANI",
+        "TAKIMI",
+        "ÇANTASI"
       ]
     },
     {
@@ -68,6 +80,13 @@
         "Fırın kapısı",
         "Kapı kolu",
         "Kol saati"
+      ],
+      "answers": [
+        "EKMEK",
+        "FIRINI",
+        "KAPISI",
+        "KOLU",
+        "SAATİ"
       ]
     },
     {
@@ -90,6 +109,12 @@
         "Yemek masası",
         "Masa örtüsü",
         "Örtü deseni"
+      ],
+      "answers": [
+        "YEMEK",
+        "MASASI",
+        "ÖRTÜSÜ",
+        "DESENİ"
       ]
     },
     {
@@ -112,6 +137,12 @@
         "Meyve suyu",
         "Su bardağı",
         "Bardak altlığı"
+      ],
+      "answers": [
+        "MEYVE",
+        "SUYU",
+        "BARDAĞI",
+        "ALTLIĞI"
       ]
     },
     {
@@ -137,6 +168,13 @@
         "Şişe kapağı",
         "Kapak resmi",
         "Resim çerçevesi"
+      ],
+      "answers": [
+        "SÜT",
+        "ŞİŞESİ",
+        "KAPAĞI",
+        "RESMİ",
+        "ÇERÇEVESİ"
       ]
     },
     {
@@ -159,6 +197,12 @@
         "Balık çorbası",
         "Çorba kaşığı",
         "Kaşık oyunu"
+      ],
+      "answers": [
+        "BALIK",
+        "ÇORBASI",
+        "KAŞIĞI",
+        "OYUNU"
       ]
     },
     {
@@ -181,6 +225,12 @@
         "Mutfak dolabı",
         "Dolap kapağı",
         "Kapak resmi"
+      ],
+      "answers": [
+        "MUTFAK",
+        "DOLABI",
+        "KAPAĞI",
+        "RESMİ"
       ]
     },
     {
@@ -203,6 +253,12 @@
         "Tatlı kaşığı",
         "Kaşık oyunu",
         "Oyun havası"
+      ],
+      "answers": [
+        "TATLI",
+        "KAŞIĞI",
+        "OYUNU",
+        "HAVASI"
       ]
     },
     {
@@ -225,6 +281,12 @@
         "Futbol sahası",
         "Saha çizgisi",
         "Çizgi film"
+      ],
+      "answers": [
+        "FUTBOL",
+        "SAHASI",
+        "ÇİZGİSİ",
+        "FİLM"
       ]
     },
     {
@@ -247,6 +309,12 @@
         "Basketbol topu",
         "Top sepeti",
         "Sepet örgüsü"
+      ],
+      "answers": [
+        "BASKETBOL",
+        "TOPU",
+        "SEPETİ",
+        "ÖRGÜSÜ"
       ]
     },
     {
@@ -269,6 +337,12 @@
         "Spor ayakkabısı",
         "Ayakkabı bağcığı",
         "Bağcık ucu"
+      ],
+      "answers": [
+        "SPOR",
+        "AYAKKABISI",
+        "BAĞCIĞI",
+        "UCU"
       ]
     },
     {
@@ -291,6 +365,12 @@
         "Tenis kortu",
         "Kort kapısı",
         "Kapı kolu"
+      ],
+      "answers": [
+        "TENİS",
+        "KORTU",
+        "KAPISI",
+        "KOLU"
       ]
     },
     {
@@ -313,6 +393,12 @@
         "Yüzme havuzu",
         "Havuz suyu",
         "Su saati"
+      ],
+      "answers": [
+        "YÜZME",
+        "HAVUZU",
+        "SUYU",
+        "SAATİ"
       ]
     },
     {
@@ -335,6 +421,12 @@
         "Golf topu",
         "Top oyunu",
         "Oyun kuralı"
+      ],
+      "answers": [
+        "GOLF",
+        "TOPU",
+        "OYUNU",
+        "KURALI"
       ]
     },
     {
@@ -357,6 +449,12 @@
         "Futbol takımı",
         "Takım oyunu",
         "Oyun havası"
+      ],
+      "answers": [
+        "FUTBOL",
+        "TAKIMI",
+        "OYUNU",
+        "HAVASI"
       ]
     },
     {
@@ -379,6 +477,12 @@
         "Spor çantası",
         "Çanta askısı",
         "Askı kancası"
+      ],
+      "answers": [
+        "SPOR",
+        "ÇANTASI",
+        "ASKISI",
+        "KANCASI"
       ]
     },
     {
@@ -401,6 +505,12 @@
         "Ev kapısı",
         "Kapı kolu",
         "Kol saati"
+      ],
+      "answers": [
+        "EV",
+        "KAPISI",
+        "KOLU",
+        "SAATİ"
       ]
     },
     {
@@ -423,6 +533,12 @@
         "Duvar saati",
         "Saat kulesi",
         "Kule kapısı"
+      ],
+      "answers": [
+        "DUVAR",
+        "SAATİ",
+        "KULESİ",
+        "KAPISI"
       ]
     },
     {
@@ -445,6 +561,12 @@
         "Okul çantası",
         "Çanta cebi",
         "Cep telefonu"
+      ],
+      "answers": [
+        "OKUL",
+        "ÇANTASI",
+        "CEBİ",
+        "TELEFONU"
       ]
     },
     {
@@ -467,6 +589,12 @@
         "Diş fırçası",
         "Fırça kılı",
         "Kıl kökü"
+      ],
+      "answers": [
+        "DİŞ",
+        "FIRÇASI",
+        "KILI",
+        "KÖKÜ"
       ]
     },
     {
@@ -489,6 +617,12 @@
         "El çantası",
         "Çanta askısı",
         "Askı kancası"
+      ],
+      "answers": [
+        "EL",
+        "ÇANTASI",
+        "ASKISI",
+        "KANCASI"
       ]
     },
     {
@@ -511,6 +645,12 @@
         "Kapı zili",
         "Zil sesi",
         "Ses kaydı"
+      ],
+      "answers": [
+        "KAPI",
+        "ZİLİ",
+        "SESİ",
+        "KAYDI"
       ]
     },
     {
@@ -536,6 +676,13 @@
         "Oda kapısı",
         "Kapı kolu",
         "Kol saati"
+      ],
+      "answers": [
+        "YATAK",
+        "ODASI",
+        "KAPISI",
+        "KOLU",
+        "SAATİ"
       ]
     },
     {
@@ -558,6 +705,12 @@
         "Masa lambası",
         "Lamba ışığı",
         "Işık hızı"
+      ],
+      "answers": [
+        "MASA",
+        "LAMBASI",
+        "IŞIĞI",
+        "HIZI"
       ]
     },
     {
@@ -580,6 +733,12 @@
         "Yağmur suyu",
         "Su bardağı",
         "Bardak altlığı"
+      ],
+      "answers": [
+        "YAĞMUR",
+        "SUYU",
+        "BARDAĞI",
+        "ALTLIĞI"
       ]
     },
     {
@@ -602,6 +761,12 @@
         "Orman yolu",
         "Yol kenarı",
         "Kenar taşı"
+      ],
+      "answers": [
+        "ORMAN",
+        "YOLU",
+        "KENARI",
+        "TAŞI"
       ]
     },
     {
@@ -624,6 +789,12 @@
         "Deniz suyu",
         "Su kenarı",
         "Kenar çizgisi"
+      ],
+      "answers": [
+        "DENİZ",
+        "SUYU",
+        "KENARI",
+        "ÇİZGİSİ"
       ]
     },
     {
@@ -646,6 +817,12 @@
         "Çam ağacı",
         "Ağaç kabuğu",
         "Kabuk rengi"
+      ],
+      "answers": [
+        "ÇAM",
+        "AĞACI",
+        "KABUĞU",
+        "RENGİ"
       ]
     },
     {
@@ -668,6 +845,12 @@
         "Gül bahçesi",
         "Bahçe kapısı",
         "Kapı kolu"
+      ],
+      "answers": [
+        "GÜL",
+        "BAHÇESİ",
+        "KAPISI",
+        "KOLU"
       ]
     },
     {
@@ -690,6 +873,12 @@
         "Dağ keçisi",
         "Keçi sütü",
         "Süt şişesi"
+      ],
+      "answers": [
+        "DAĞ",
+        "KEÇİSİ",
+        "SÜTÜ",
+        "ŞİŞESİ"
       ]
     },
     {
@@ -712,6 +901,12 @@
         "Güneş ışığı",
         "Işık kaynağı",
         "Kaynak suyu"
+      ],
+      "answers": [
+        "GÜNEŞ",
+        "IŞIĞI",
+        "KAYNAĞI",
+        "SUYU"
       ]
     },
     {
@@ -734,6 +929,12 @@
         "Yaprak damarı",
         "Damar yolu",
         "Yol haritası"
+      ],
+      "answers": [
+        "YAPRAK",
+        "DAMARI",
+        "YOLU",
+        "HARİTASI"
       ]
     },
     {
@@ -756,6 +957,12 @@
         "Kitap kapağı",
         "Kapak resmi",
         "Resim sergisi"
+      ],
+      "answers": [
+        "KİTAP",
+        "KAPAĞI",
+        "RESMİ",
+        "SERGİSİ"
       ]
     },
     {
@@ -778,6 +985,12 @@
         "Sanat galerisi",
         "Galeri kapısı",
         "Kapı kolu"
+      ],
+      "answers": [
+        "SANAT",
+        "GALERİSİ",
+        "KAPISI",
+        "KOLU"
       ]
     },
     {
@@ -800,6 +1013,12 @@
         "Sinema salonu",
         "Salon kapısı",
         "Kapı kolu"
+      ],
+      "answers": [
+        "SİNEMA",
+        "SALONU",
+        "KAPISI",
+        "KOLU"
       ]
     },
     {
@@ -822,6 +1041,12 @@
         "Tiyatro oyunu",
         "Oyun yazarı",
         "Yazar evi"
+      ],
+      "answers": [
+        "TİYATRO",
+        "OYUNU",
+        "YAZARI",
+        "EVİ"
       ]
     },
     {
@@ -844,6 +1069,12 @@
         "Müzik aleti",
         "Alet kutusu",
         "Kutu kapağı"
+      ],
+      "answers": [
+        "MÜZİK",
+        "ALETİ",
+        "KUTUSU",
+        "KAPAĞI"
       ]
     },
     {
@@ -866,6 +1097,12 @@
         "Halk oyunu",
         "Oyun havası",
         "Hava durumu"
+      ],
+      "answers": [
+        "HALK",
+        "OYUNU",
+        "HAVASI",
+        "DURUMU"
       ]
     },
     {
@@ -888,6 +1125,12 @@
         "Şiir kitabı",
         "Kitap kapağı",
         "Kapak resmi"
+      ],
+      "answers": [
+        "ŞİİR",
+        "KİTABI",
+        "KAPAĞI",
+        "RESMİ"
       ]
     },
     {
@@ -910,6 +1153,12 @@
         "Öykü kitabı",
         "Kitap fuarı",
         "Fuar alanı"
+      ],
+      "answers": [
+        "ÖYKÜ",
+        "KİTABI",
+        "FUARI",
+        "ALANI"
       ]
     }
   ]

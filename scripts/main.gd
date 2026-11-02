@@ -11,8 +11,10 @@ var content: VBoxContainer
 var stage: Control
 var active_row: ZincirWordRow
 var active_group: VBoxContainer
+var active_link: Label
 var feedback: Label
 var toast_layer: CanvasLayer
+var toast_tween: Tween
 var sound: Node
 var keyboard_spacer: Control
 var last_keyboard = 0
@@ -25,6 +27,10 @@ var party_count = 0
 var resize_tick = 0.0
 var previous_size = Vector2.ZERO
 var profile_input: LineEdit
+var transition_busy = false
+var transition_token = 0
+var transition_result: Dictionary = {}
+const WORD_TRANSITION_SECONDS = 0.78
 
 func _ready() -> void:
 	OS.low_processor_usage_mode = true
@@ -72,6 +78,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		_go_back()
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_finish_transition_immediately()
 		state.save_game()
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -95,10 +102,13 @@ func _refresh_screen() -> void:
 		"online": _show_online()
 
 func _clear(new_screen: String, max_width: int = 1080) -> void:
+	_cancel_word_transition()
+	_clear_toasts()
 	screen = new_screen
 	compact = size.x < 760
 	active_row = null
 	active_group = null
+	active_link = null
 	feedback = null
 	keyboard_spacer = null
 	for child in stage.get_children():
@@ -137,7 +147,11 @@ func _topbar(title: String = "", back: bool = false) -> void:
 		var b = U.icon_button("back", _go_back)
 		h.add_child(b)
 	else:
-		h.add_child(U.icon("chain", 38))
+		var brand_mascot = _hero_art(38)
+		brand_mascot.name = "BrandMascot"
+		brand_mascot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		brand_mascot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		h.add_child(brand_mascot)
 	var title_label = U.label(title if not title.is_empty() else "SÖZCÜK\nZİNCİRİ", 20 if compact else 23, U.INK, true)
 	title_label.clip_text = true
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -164,7 +178,7 @@ func _topbar(title: String = "", back: bool = false) -> void:
 func _show_loading() -> void:
 	_clear("loading", 460)
 	content.add_child(U.spacer(maxf(20, size.y * 0.20)))
-	var logo = U.icon("chain", 86)
+	var logo = _hero_art(86)
 	logo.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	content.add_child(logo)
 	var l = U.label("SÖZCÜK\nZİNCİRİ", 52, U.INK, true)
@@ -214,7 +228,7 @@ func _accept_profile() -> void:
 
 func _hero_art(height: int) -> Control:
 	var art = TextureRect.new()
-	art.texture = load("res://assets/hero.png")
+	art.texture = load("res://assets/mascot.png") if ResourceLoader.exists("res://assets/mascot.png") else load("res://assets/icons/chain.svg")
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.custom_minimum_size = Vector2(height, height)
@@ -257,7 +271,7 @@ func _show_home() -> void:
 		var chain = U.column(6)
 		chain.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		chain.add_child(U.spacer(4))
-		chain.add_child(U.badge("ÇAY  →  K · · · ·", Color("fff5da")))
+		chain.add_child(U.badge("ÇAY → K_____", Color("fff5da")))
 		chain.add_child(U.label("Sıradaki kelime sende.", 14, U.INK))
 		mini.add_child(chain)
 		mini.add_child(_hero_art(85 if size.x < 380 else 112))
@@ -405,22 +419,31 @@ func _show_game() -> void:
 	content.add_child(U.progress(float(state.active_index - 1) / (level.words.size() - 1) * 100, U.TEAL, 8))
 	if tutorial:
 		var tip = U.panel(Color("fff0c9"), 16)
-		var tips = ["", "Çay ile hangi kelime birleşir? Çay kaşığı! K hazır; kutulara dokun ve AŞIK yaz.", "Harika! Kaşık oyunu bir halk dansıdır. O hazır; kalan kutulara YUN yaz.", "Son bağlantı: oyun havası. H hazır; AVA yaz ve zinciri tamamla."]
-		tip.add_child(U.paragraph(tips[mini(state.active_index, tips.size() - 1)], 17, U.INK))
+		var tips = ["", "Çay kaşığı! K hazır; AŞIĞI yaz. Doğru cevap KAŞIĞI, kısa bir dönüşümle KAŞIK olacak.", "Şimdi kaşık oyunu. O hazır; YUNU yaz. OYUNU, sonraki bağlantı için OYUN olacak.", "Son bağlantı: oyun havası. H hazır; AVASI yaz. HAVASI → HAVA ve zincir tamam!"]
+		var guide = U.row(12)
+		if state.active_index == 1:
+			var mascot = _hero_art(64)
+			mascot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			guide.add_child(mascot)
+		guide.add_child(U.paragraph(tips[mini(state.active_index, tips.size() - 1)], 17, U.INK))
+		tip.add_child(guide)
 		content.add_child(tip)
 	else:
-		content.add_child(U.paragraph("Yan yana iki kelime, anlamlı bir tamlama. Kutulara dokun, eksik harfleri yaz.", 16))
+		content.add_child(U.paragraph("Tamlamayı tamamlayan kelimeyi ekiyle yaz. Doğru cevap, sıradaki bağlantı için köküne dönüşür.", 16))
 	var chain = U.column(9)
 	content.add_child(chain)
 	for i in level.words.size():
 		if i > 0:
 			var connector = U.row(8)
 			connector.add_child(U.icon("chain", 18))
-			var link_text = str(level.links[i - 1]) if i < state.active_index else "Sıradaki bağlantı" if i == state.active_index else ""
-			connector.add_child(U.label(link_text, 13, U.TEAL if i < state.active_index else U.MUTED))
+			var masked = state.answer_word(i).substr(0, 1) + " ·".repeat(maxi(0, state.answer_word(i).length() - 1))
+			var link_text = str(level.links[i - 1]) if i < state.active_index else "%s + %s" % [state.stem_word(i - 1), masked] if i == state.active_index else ""
+			var link_label = U.paragraph(link_text, 13, U.TEAL if i < state.active_index else U.MUTED)
+			connector.add_child(link_label)
+			if i == state.active_index: active_link = link_label
 			chain.add_child(connector)
 		var row = WordRow.new()
-		row.word = level.words[i]
+		row.word = state.stem_word(i) if i < state.active_index else state.answer_word(i)
 		row.ordinal = i + 1
 		row.mode = "solved" if i < state.active_index else "active" if i == state.active_index else "locked"
 		row.known = state.visible_letters(i)
@@ -433,7 +456,7 @@ func _show_game() -> void:
 			row.input_focused.connect(func(): _scroll_active.call_deferred())
 		else:
 			chain.add_child(row)
-	feedback = U.paragraph("Yalnızca eksik harfleri yaz; ilk harf bizden.", 15, U.MUTED)
+	feedback = U.paragraph("Yalnızca eksik harfleri yaz; tamlamanın eki de cevaba dahil.", 15, U.MUTED)
 	active_group.add_child(feedback)
 	active_group.add_child(U.button("KONTROL ET  ✓", U.ORANGE, func(): _submit(active_row.guess()), 56))
 	var jokers = U.row(12)
@@ -467,14 +490,29 @@ func _show_game() -> void:
 	if state.active_index > 1: _scroll_active.call_deferred()
 
 func _submit(guess: String) -> void:
-	if screen != "game": return
+	if screen != "game" or transition_busy: return
 	var result = state.submit_guess(guess)
 	if result.get("ok", false):
+		transition_busy = true
+		transition_result = result.duplicate()
+		var token = transition_token
+		var solved_row = active_row
+		_hide_keyboard()
+		_disable_group_inputs(active_group)
+		solved_row.show_correct_answer(str(result.word))
+		if is_instance_valid(active_link):
+			active_link.text = str(state.current_level.links[int(result.solved_index) - 1])
+			active_link.add_theme_color_override("font_color", U.TEAL)
+		feedback.text = "%s  →  %s\nBağlantı tamam; kelime sıradaki halkaya hazırlanıyor." % [result.word, result.stem]
+		feedback.add_theme_color_override("font_color", U.TEAL)
 		sound.play("win" if result.get("complete", false) else "good")
 		if bool(state.settings.get("haptics", true)) and OS.has_feature("android"):
 			Input.vibrate_handheld(35)
+		solved_row.animate_to_stem(str(result.stem), bool(state.settings.get("reduced_motion", false)))
+		await get_tree().create_timer(WORD_TRANSITION_SECONDS).timeout
+		if token != transition_token or screen != "game" or not is_instance_valid(solved_row): return
+		transition_busy = false
 		if result.get("complete", false):
-			_hide_keyboard()
 			_show_win(result)
 		else:
 			_show_game()
@@ -488,7 +526,29 @@ func _submit(guess: String) -> void:
 			tw.tween_property(active_row, "modulate", Color("ffd0bb"), 0.12)
 			tw.tween_property(active_row, "modulate", Color.WHITE, 0.18)
 
+func _disable_group_inputs(node: Node) -> void:
+	if not is_instance_valid(node): return
+	if node is Button: node.disabled = true
+	for child in node.get_children():
+		_disable_group_inputs(child)
+
+func _cancel_word_transition() -> void:
+	transition_token += 1
+	transition_busy = false
+	transition_result.clear()
+	if is_instance_valid(active_row):
+		active_row.cancel_animation()
+
+func _finish_transition_immediately() -> void:
+	if not transition_busy: return
+	var result = transition_result.duplicate()
+	_cancel_word_transition()
+	if screen != "game": return
+	if result.get("complete", false): _show_win(result)
+	else: _show_game()
+
 func _reveal() -> void:
+	if screen != "game" or transition_busy: return
 	var typed = active_row.typed_by_position() if is_instance_valid(active_row) else {}
 	var result = state.reveal_letter()
 	if result.get("ok", false):
@@ -500,6 +560,7 @@ func _reveal() -> void:
 		_toast("Bu kelimede açılacak başka harf kalmadı." if result.get("reason") != "insufficient_gold" else "Harf almak için 20 altın gerekiyor.")
 
 func _hint() -> void:
+	if screen != "game" or transition_busy: return
 	var typed = active_row.typed_by_position() if is_instance_valid(active_row) else {}
 	var result = state.buy_hint()
 	if result.get("ok", false):
@@ -514,7 +575,7 @@ func _show_win(result: Dictionary) -> void:
 	_clear("win", 520)
 	var tutorial = state.current_level.id == "tutorial"
 	content.add_child(U.spacer(20))
-	var trophy = U.icon("trophy", 90)
+	var trophy = _hero_art(104)
 	trophy.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	content.add_child(trophy)
 	var badge = U.badge("BAĞLANTILAR TAMAM!", U.YELLOW)
@@ -606,11 +667,11 @@ func _show_settings() -> void:
 	content.add_child(U.button("ÖĞRETİCİYİ TEKRAR OYNA", U.YELLOW, _start_tutorial, 55))
 	content.add_child(U.paragraph("İlerleme bu cihazda otomatik kaydedilir. Web sürümünde aynı tarayıcı ve adresle devam edebilirsin. Gizli sekmede kayıt kalıcı olmayabilir.", 16))
 	var about = U.panel(U.PAPER, 18)
-	about.add_child(U.paragraph("NASIL OYNANIR?\n\nİlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Her iki kelime anlamlı bir tamlama oluşturur.\n\nHarf: 20 altın · Tanım ipucu: 15 altın\nYeni bölüm: +40 altın · +100 puan\n\nSözcük Zinciri · Türkçe · v1.0", 16, U.INK))
+	about.add_child(U.paragraph("NASIL OYNANIR?\n\nİlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, tamlamayı tamamlayan kelimeyi ekiyle yaz ve kontrol et. Örneğin ÇAY → KAŞIĞI; doğru cevap kısa bir animasyonla KAŞIK olur. Sonra KAŞIK → OYUNU ile devam edersin.\n\nHarf: 20 altın · Tanım ipucu: 15 altın\nYeni bölüm: +40 altın · +100 puan\n\nSözcük Zinciri · Türkçe · v1.2", 16, U.INK))
 	content.add_child(about)
 
 func _toast(message: String, success: bool = false) -> void:
-	for child in toast_layer.get_children(): child.queue_free()
+	_clear_toasts()
 	var wrap = MarginContainer.new()
 	wrap.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	wrap.offset_left = 24
@@ -624,10 +685,18 @@ func _toast(message: String, success: bool = false) -> void:
 	var l = U.paragraph(message, 17, U.INK)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	panel.add_child(l)
-	var tw = create_tween()
-	tw.tween_interval(2.8)
-	tw.tween_property(wrap, "modulate:a", 0.0, 0.25)
-	tw.tween_callback(wrap.queue_free)
+	toast_tween = create_tween()
+	toast_tween.tween_interval(2.8)
+	toast_tween.tween_property(wrap, "modulate:a", 0.0, 0.25)
+	toast_tween.tween_callback(wrap.queue_free)
+
+func _clear_toasts() -> void:
+	if toast_tween and toast_tween.is_valid(): toast_tween.kill()
+	toast_tween = null
+	if not is_instance_valid(toast_layer): return
+	for child in toast_layer.get_children():
+		toast_layer.remove_child(child)
+		child.queue_free()
 
 func _hide_keyboard() -> void:
 	var focused = get_viewport().gui_get_focus_owner()
