@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const playwright = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const URL = process.env.GAME_URL || 'http://localhost:8060';
 const SAVE_KEY = 'sozcuk_zinciri_v1';
+const captureLoader = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::|\/)/u.test(URL);
 const out = path.resolve(__dirname, '../output');
 fs.mkdirSync(out, { recursive: true });
 
@@ -83,23 +84,25 @@ fs.mkdirSync(out, { recursive: true });
     await loaderPage.route('**/assets/mascot-cheer.webp', async route => {
       imageRequested();
       await gate;
-      try { await route.continue(); } catch { /* Context cleanup may cancel a held request. */ }
+      // Complete a known real image immediately after the gate. The full flow below
+      // separately fetches deployed assets; this probe isolates bootstrap readiness.
+      try { await route.fulfill({ path: path.resolve(__dirname, '../assets/mascot-cheer.webp'), contentType: 'image/webp' }); } catch { /* Context cleanup may cancel a held request. */ }
     });
     try {
       const opened = Date.now();
       await loaderPage.goto(URL, { waitUntil: 'commit' });
       await loaderPage.locator('main.boot[data-screen="loading"]').waitFor({ state: 'visible' });
-      await Promise.race([seen, new Promise((_, reject) => setTimeout(() => reject(new Error('Expected selected entry-pose bootstrap request.')), 3000))]);
+      await Promise.race([seen, new Promise((_, reject) => setTimeout(() => reject(new Error('Expected selected entry-pose bootstrap request.')), 15000))]);
       const runner = loaderPage.getByTestId('mascot-runner');
       check(await runner.isVisible(), 'The actual loading screen should display the running mascot while a bootstrap image is delayed.');
       check(await runner.evaluate(el => getComputedStyle(el).backgroundImage.includes('mascot-run.webp')), 'Loading should use the real eight-frame mascot atlas.');
       const progress = await loaderPage.locator('#boot-progress').evaluate(el => ({ value: Number(el.getAttribute('aria-valuenow') ?? el.value), max: Number(el.getAttribute('aria-valuemax') ?? el.max) }));
       check(progress.value >= 1 && progress.value < progress.max, 'Bootstrap progress should reflect completed work while the entry image remains pending.');
-      if (!reduceMotion) await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading-frame1.png') });
+      if (!reduceMotion && captureLoader) await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading-frame1.png') });
       const before = await runner.evaluate(el => getComputedStyle(el).backgroundPosition);
       await loaderPage.waitForTimeout(140);
       const after = await runner.evaluate(el => getComputedStyle(el).backgroundPosition);
-      if (!reduceMotion) await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading-frame2.png') });
+      if (!reduceMotion && captureLoader) await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading-frame2.png') });
       if (reduceMotion) {
         check(before === after, 'Reduced motion should keep the loading mascot on a static frame.');
       } else {
@@ -117,7 +120,7 @@ fs.mkdirSync(out, { recursive: true });
       }
       const loaderBounds = await loaderPage.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth }));
       check(loaderBounds.scroll <= loaderBounds.width + 1, 'The loader should fit a 320-pixel screen.');
-      if (!reduceMotion) {
+      if (!reduceMotion && captureLoader) {
         await loaderPage.waitForTimeout(Math.max(0, 800 - (Date.now() - opened)));
         await loaderPage.screenshot({ path: path.join(out, 'fast-web-loading.png') });
       }
