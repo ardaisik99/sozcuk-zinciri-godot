@@ -77,6 +77,9 @@ fs.mkdirSync(out, { recursive: true });
   async function probeLoader(reduceMotion) {
     const loaderContext = await browser.newContext({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, reducedMotion: reduceMotion ? 'reduce' : 'no-preference' });
     const loaderPage = await loaderContext.newPage();
+    // Supply the real atlas immediately so the deliberate entry-image gate is
+    // the only pending bootstrap dependency, independent of CDN latency.
+    await loaderPage.route('**/assets/mascot-run.webp', route => route.fulfill({ path: path.resolve(__dirname, '../assets/mascot-run.webp'), contentType: 'image/webp' }));
     let release;
     let imageRequested;
     const gate = new Promise(resolve => { release = resolve; });
