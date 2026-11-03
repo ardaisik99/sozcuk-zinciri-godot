@@ -1,7 +1,7 @@
 // Synchronous, server-authoritative match rules. No network, timers, or client state.
 export const COUNTDOWN_MS = 3_000;
-export const TURN_MS = 20_000;
-export const MATCH_MS = 180_000;
+export const TURN_MS = 30_000;
+export const MATCH_MS = 240_000;
 export const CORRECT_SCORE = 100;
 export const MESSAGE_LIMIT = 160;
 export const MESSAGE_HISTORY_LIMIT = 100;
@@ -23,7 +23,32 @@ const opponent = (match, id) => match.players.find(player => player.id !== id);
 function playerRecord(player) {
   if (!player || typeof player.id !== 'string' || !player.id || typeof player.name !== 'string' || !player.name.trim() || typeof player.code !== 'string' || !player.code) throw new TypeError('Player id, name and public code are required.');
   if (player.name.length > 18 || controls.test(player.name)) throw new TypeError('Invalid player name.');
-  return { id: player.id, name: player.name.trim(), code: player.code, score: 0, responseMs: 0, connected: true };
+  return { id: player.id, name: player.name.trim(), code: player.code, score: 0, responseMs: 0, roundWins: 0, connected: true };
+}
+
+function chainCells(chain) {
+  if (!chain || !Array.isArray(chain.words) || chain.words.length !== 5 || !Array.isArray(chain.answers) || chain.answers.length !== 5) throw new TypeError('An exact five-word chain is required.');
+  if (chain.answers[0] !== chain.words[0] || [...chain.words, ...chain.answers].some(word => typeof word !== 'string' || !word || normalizeAnswer(word) !== word || !lettersOnly.test(word))) throw new TypeError('Chain stems and answers must be uppercase Turkish words.');
+  return chain.words.map((stem, index) => ({ stem, answer: chain.answers[index], first: chain.answers[index][0], length: chain.answers[index].length, status: index === 0 ? 'solved' : 'hidden' }));
+}
+
+// Existing rooms survive a deployment. Completed v1 rooms remain completed;
+// an in-flight v1 turn receives the additional ten seconds exactly once.
+function upgrade(match) {
+  if (match.version >= 2) return false;
+  match.version = 2;
+  match.roundNumber = 1;
+  match.roundResult = null;
+  match.continueReady = [];
+  match.roundEndedAt = null;
+  match.roundStartedAt = match.startedAt ?? null;
+  match.usedChainIds = [];
+  for (const player of match.players) player.roundWins = 0;
+  if (match.phase === 'playing') {
+    match.deadlineAt += 10_000;
+    match.matchEndsAt = (match.startedAt || match.createdAt) + MATCH_MS;
+  } else if (match.phase === 'countdown') match.matchEndsAt = match.deadlineAt + MATCH_MS;
+  return true;
 }
 
 function addMessage(match, { playerId = null, name = 'Oyun', text, kind = 'system', at, clientMessageId }) {
@@ -35,7 +60,7 @@ function addMessage(match, { playerId = null, name = 'Oyun', text, kind = 'syste
   return message;
 }
 
-function finish(match, reason, at, winnerId = undefined) {
+function finishSeries(match, reason, at, winnerId = null) {
   if (match.phase === 'finished') return;
   match.phase = 'finished';
   match.finishedAt = at;
@@ -43,33 +68,57 @@ function finish(match, reason, at, winnerId = undefined) {
   match.activePlayerId = null;
   match.deadlineAt = null;
   match.turnId += 1;
-  match.tieBreak = null;
-  if (winnerId !== undefined) match.winnerId = winnerId;
-  else {
-    const [left, right] = match.players;
-    match.winnerId = !left || !right || left.score === right.score ? null : left.score > right.score ? left.id : right.id;
-    if (left && right && left.score === right.score && left.score > 0 && (left.responseMs || 0) !== (right.responseMs || 0)) {
-      match.winnerId = (left.responseMs || 0) < (right.responseMs || 0) ? left.id : right.id;
-      match.tieBreak = 'speed';
-    }
-  }
+  match.winnerId = winnerId;
   const winner = member(match, match.winnerId);
   addMessage(match, { text: winner ? `${winner.name} kazandı!` : reason === 'room_closed' ? 'Oda kapatıldı.' : 'Karşılaşma berabere tamamlandı.', at });
+}
+
+function finishRound(match, reason, at) {
+  const [left, right] = match.players;
+  let winnerId = !left || !right || left.score === right.score ? null : left.score > right.score ? left.id : right.id;
+  let tieBreak = null;
+  if (left && right && left.score === right.score && left.score > 0 && (left.responseMs || 0) !== (right.responseMs || 0)) {
+    winnerId = (left.responseMs || 0) < (right.responseMs || 0) ? left.id : right.id;
+    tieBreak = 'speed';
+  }
+  match.roundResult = { winnerId, tieBreak, reason, scores: match.players.map(({id,score,responseMs=0}) => ({id,score,responseMs})) };
+  match.tieBreak = tieBreak;
+  match.roundEndedAt = at;
+  match.activePlayerId = null;
+  match.deadlineAt = null;
+  match.turnId += 1;
+  match.continueReady = [];
+  const winner = member(match,winnerId);
+  if (winner) winner.roundWins += 1;
+  if (winner && winner.roundWins >= 2) {
+    finishSeries(match,'series_complete',at,winnerId);
+  } else {
+    match.phase = 'round_end';
+    match.winnerId = null;
+    match.endReason = null;
+    addMessage(match,{text:winner ? `${winner.name} turu kazandı. Devam etmek için ikiniz de hazır olun.` : 'Tur berabere. Aynı tur yeni zincirle tekrar oynanacak.',at});
+  }
 }
 
 export function createMatch({ roomCode, host, chain, now }) {
   const at = validTime(now);
   if (typeof roomCode !== 'string' || !roomCode) throw new TypeError('A room code is required.');
-  if (!chain || !Array.isArray(chain.words) || chain.words.length !== 5 || !Array.isArray(chain.answers) || chain.answers.length !== 5) throw new TypeError('An exact five-word chain is required.');
-  if (chain.answers[0] !== chain.words[0] || [...chain.words, ...chain.answers].some(word => typeof word !== 'string' || !word || normalizeAnswer(word) !== word || !lettersOnly.test(word))) throw new TypeError('Chain stems and answers must be uppercase Turkish words.');
+  const cells = chainCells(chain);
   const player = playerRecord(host);
   return {
-    version: 1,
+    version: 2,
     roomCode,
     hostId: player.id,
     players: [player],
     phase: 'waiting',
-    chain: chain.words.map((stem, index) => ({ stem, answer: chain.answers[index], first: chain.answers[index][0], length: chain.answers[index].length, status: index === 0 ? 'solved' : 'hidden' })),
+    chain: cells,
+    currentChainId: typeof chain.id === 'string' ? chain.id : null,
+    usedChainIds: typeof chain.id === 'string' ? [chain.id] : [],
+    roundNumber: 1,
+    roundResult: null,
+    continueReady: [],
+    roundEndedAt: null,
+    roundStartedAt: null,
     activeIndex: 1,
     activePlayerId: null,
     startingPlayerIndex: 0,
@@ -127,24 +176,25 @@ export function startMatch(match, playerId, now) {
 
 export function advanceTime(match, now) {
   const at = validTime(now);
-  let changed = false;
+  let changed = upgrade(match);
   if (match.phase === 'countdown' && at >= match.deadlineAt) {
     const began = match.deadlineAt;
     match.phase = 'playing';
-    match.startedAt = began;
+    match.startedAt ??= began;
+    match.roundStartedAt = began;
     match.activePlayerId = match.players[match.startingPlayerIndex === 1 ? 1 : 0].id;
     match.deadlineAt = began + TURN_MS;
     match.turnId += 1;
     changed = true;
-    addMessage(match, { text: `${member(match, match.activePlayerId).name} başlıyor. Tek kelimeyle tahmin et, cümleyle sohbet et.`, at: began });
+    addMessage(match, { text: `${member(match, match.activePlayerId).name} başlıyor. Yalnız sırası gelen oyuncu yazabilir.`, at: began });
   }
   // Walk deadline events chronologically. An alarm firing late never grants
   // extra seconds, and duplicate alarms cannot repeat a timeout or a score.
   while (match.phase === 'playing') {
     const next = Math.min(match.deadlineAt, match.matchEndsAt);
     if (at < next) break;
-    if (match.matchEndsAt <= match.deadlineAt) {
-      finish(match, 'time_limit', match.matchEndsAt);
+    if (match.matchEndsAt < match.deadlineAt) {
+      finishRound(match, 'time_limit', match.matchEndsAt);
       changed = true;
       break;
     }
@@ -159,7 +209,7 @@ export function advanceTime(match, now) {
       match.activeIndex += 1;
       match.consecutiveTimeouts = 0;
       if (match.activeIndex >= match.chain.length) {
-        finish(match, 'chain_complete', ended);
+        finishRound(match, 'chain_complete', ended);
         changed = true;
         break;
       }
@@ -179,6 +229,8 @@ export function sendMessage(match, { playerId, text, turnId, messageId } = {}, n
   if (typeof messageId !== 'string' || !messageId || messageId.length > 128 || controls.test(messageId)) return failure('invalid_message_id', changed);
   const prior = match.recentMessageIds.find(entry => entry.playerId === playerId && entry.messageId === messageId);
   if (prior) return { ok: true, duplicate: true, changed };
+  if (match.phase !== 'playing') return failure('not_playing', changed);
+  if (match.activePlayerId !== playerId) return failure('not_your_turn', changed);
   if (!Number.isInteger(turnId) || turnId !== match.turnId) return failure('stale_turn', changed);
   if (typeof text !== 'string' || controls.test(text)) return failure('invalid_text', changed);
   const clean = text.trim().normalize('NFC');
@@ -204,7 +256,7 @@ export function sendMessage(match, { playerId, text, turnId, messageId } = {}, n
   match.recentMessageIds.push({ playerId, messageId });
   if (match.recentMessageIds.length > RECENT_MESSAGE_LIMIT) match.recentMessageIds.splice(0, match.recentMessageIds.length - RECENT_MESSAGE_LIMIT);
   if (kind === 'correct') {
-    if (match.activeIndex >= match.chain.length) finish(match, 'chain_complete', at);
+    if (match.activeIndex >= match.chain.length) finishRound(match, 'chain_complete', at);
     else {
       match.activePlayerId = opponent(match, playerId).id;
       match.deadlineAt = at + TURN_MS;
@@ -214,16 +266,56 @@ export function sendMessage(match, { playerId, text, turnId, messageId } = {}, n
   return { ok: true, changed: true, kind, correct: kind === 'correct', messageId: message.id, ...resolution };
 }
 
+export function continueRound(match, playerId, chain, now) {
+  const changed = advanceTime(match,now).changed;
+  if (!member(match,playerId)) return failure('not_player',changed);
+  if (match.phase !== 'round_end') return failure('not_round_end',changed);
+  if (match.continueReady.includes(playerId)) return {ok:true,duplicate:true,changed};
+  if (match.players.some(player=>!player.connected)) return failure('player_disconnected',changed);
+  // Validate before accepting the second ready action. A malformed private bank
+  // must not leave a room irreversibly marked ready with no usable next round.
+  let cells;
+  if (match.continueReady.length===1) {
+    try {cells=chainCells(chain);} catch {return failure('invalid_chain',changed);}
+  }
+  match.continueReady.push(playerId);
+  if (match.continueReady.length<2) return {ok:true,changed:true};
+  match.roundNumber = 1 + match.players.reduce((sum,player)=>sum+player.roundWins,0);
+  match.chain = cells;
+  match.currentChainId = typeof chain.id === 'string' ? chain.id : null;
+  if (match.currentChainId && !match.usedChainIds.includes(match.currentChainId)) match.usedChainIds.push(match.currentChainId);
+  match.phase = 'countdown';
+  match.deadlineAt = validTime(now) + COUNTDOWN_MS;
+  match.matchEndsAt = match.deadlineAt + MATCH_MS;
+  match.roundStartedAt = null;
+  match.roundEndedAt = null;
+  match.roundResult = null;
+  match.continueReady = [];
+  match.activeIndex = 1;
+  match.activePlayerId = null;
+  match.startingPlayerIndex = match.startingPlayerIndex===1?0:1;
+  match.consecutiveTimeouts = 0;
+  match.tieBreak = null;
+  match.lastCorrect = null;
+  match.messages = [];
+  for (const player of match.players) {player.score=0;player.responseMs=0;}
+  match.turnId += 1;
+  addMessage(match,{text:`${match.roundNumber}. tur 3 saniye sonra başlıyor.`,at:validTime(now)});
+  return {ok:true,changed:true};
+}
+
 export function leaveMatch(match, playerId, now) {
   const changed = advanceTime(match, now).changed;
   const player = member(match, playerId);
   if (!player) return failure('not_player', changed);
   player.connected = false;
   const at = validTime(now);
-  if (match.phase === 'playing') {
-    finish(match, 'forfeit', at, opponent(match, playerId)?.id ?? null);
+  if (match.phase === 'playing' || match.phase === 'round_end' || (match.phase==='countdown' && match.startedAt!==null)) {
+    const winner = opponent(match,playerId);
+    if (winner) winner.roundWins = 2;
+    finishSeries(match, 'forfeit', at, winner?.id ?? null);
   } else if (match.phase === 'waiting' || match.phase === 'countdown') {
-    if (playerId === match.hostId) finish(match, 'room_closed', at, null);
+    if (playerId === match.hostId) finishSeries(match, 'room_closed', at, null);
     else {
       match.players = match.players.filter(item => item.id !== playerId);
       match.phase = 'waiting';
@@ -249,7 +341,7 @@ export function nextAlarm(match) {
 export function publicMatch(match, now) {
   return {
     roomCode: match.roomCode,
-    players: match.players.map(({ id, name, code, score, responseMs = 0, connected }) => ({ id, name, code, score, responseMs, connected })),
+    players: match.players.map(({ id, name, code, score, responseMs = 0, roundWins=0, connected }) => ({ id, name, code, score, responseMs, roundWins, connected })),
     phase: match.phase,
     activePlayerId: match.activePlayerId,
     deadlineAt: match.deadlineAt,
@@ -264,5 +356,10 @@ export function publicMatch(match, now) {
     endReason: match.endReason,
     tieBreak: match.tieBreak || null,
     lastCorrect: match.lastCorrect ? copy(match.lastCorrect) : null,
+    roundNumber: match.roundNumber || 1,
+    roundResult: match.roundResult ? copy(match.roundResult) : null,
+    continueReady: [...(match.continueReady || [])],
+    winsToWin: 2,
+    maxRounds: 3,
   };
 }

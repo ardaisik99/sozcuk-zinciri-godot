@@ -8,6 +8,7 @@ const onlineReasons = {
   room_not_found: 'Bu oda bulunamadı. Kodu kontrol et veya yeni bir oda aç.', room_closed: 'Bu oda kapanmış. Yeni bir oda açabilirsin.', room_expired: 'Bu oda kapanmış. Yeni bir oda açabilirsin.', room_full: 'Bu odada iki oyuncu var. Başka bir oda açabilirsin.', already_in_room: 'Zaten açık bir odan var. Önce o odadan ayrıl.',
   room_finished: 'Bu karşılaşma sona erdi. Yeni bir oda açabilirsin.', not_host: 'Karşılaşmayı oda sahibi başlatabilir.', not_ready: 'Başlamak için iki oyuncunun da bağlanması gerekiyor.',
   not_enough_players: 'Arkadaşın bağlandığında başlayabilirsiniz.', need_two_players: 'Arkadaşın bağlandığında başlayabilirsiniz.', host_only: 'Karşılaşmayı oda sahibi başlatabilir.', player_disconnected: 'Arkadaşının yeniden bağlanması bekleniyor.', rate_limited: 'Biraz hızlı gidiyoruz. Kısa bir ara verip tekrar dene.', stale_turn: 'Sıra değişti. Güncel kelimeye bakıp tekrar gönder.',
+  not_your_turn: 'Sıra rakibinde. Kendi sıranı bekle.', not_playing: 'Tur başlayınca cevap yazabilirsin.',
   message_too_long: 'Mesajın en fazla 160 karakter olabilir.', invalid_message: 'Bir kelime veya mesaj yaz.', invalid_text: 'Bir kelime veya mesaj yaz.', not_friend: 'Odaya davet etmek için önce arkadaş olun.', not_friends: 'Odaya davet etmek için önce arkadaş olun.',
   unauthorized: 'Oyuncu kartına erişilemedi. Yeniden bağlanalım.', invalid_token: 'Oyuncu kartına erişilemedi. Yeniden bağlanalım.', network: 'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.',
 };
@@ -222,7 +223,7 @@ export class OnlineScreen {
 
   _mountRoom() {
     this._closeLobby(); this.connection = 'connecting'; this.lastMessageIds = '';
-    this._shell(`<div class="oz-room-heading"><div><span class="oz-subtitle">ODA KODUN</span><button type="button" class="oz-room-code" data-online-action="copy-room" data-testid="online-room-code" aria-label="Oda kodunu kopyala">${onlineEscape(this.roomCode)}</button></div><span class="oz-connection" data-oz="connection" role="status">Bağlanıyor…</span></div><p class="oz-replaced" data-oz="replaced" hidden>Bu oda başka bir sekmede açık. ${this._button('BU SEKMEDE DEVAM ET', 'resume-room', 'white small')}</p><div class="oz-room-grid"><section class="oz-play"><section class="panel oz-lobby" data-oz="lobby"><span class="tag">ARKADAŞINLA BULUŞ</span><h2>Oda hazır. Sıra sizde!</h2><p>Bu kodu arkadaşına gönder. İkiniz de bağlandığınızda oda sahibi başlatabilir.</p><div class="oz-lobby-players" data-oz="lobby-players"></div><div data-oz="start-area"></div><details class="oz-invite-details"><summary>Bir arkadaşını davet et</summary><div data-oz="room-invites"></div></details></section><section class="oz-match" data-oz="match" hidden><div class="oz-scoreboard" data-oz="scoreboard"></div><div class="oz-countdown panel" data-oz="countdown" hidden><span>HAZIR MISINIZ?</span><strong data-oz="countdown-number" role="status">3</strong><p>Aynı zincir. Sırayla kelimeler.</p></div><section class="oz-board panel" data-oz="board"><div class="oz-turn-row"><span class="oz-turn" data-oz="turn"></span><span class="oz-timer" data-oz="timer" aria-label="Kalan süre">20</span></div><div class="oz-timer-track"><i data-oz="timer-fill"></i></div><div class="oz-chain-history" data-oz="chain-history"></div><div class="oz-current-word" data-oz="active-word" data-testid="online-active-word"></div><p class="oz-round-info" data-oz="round-info"></p></section></section><section class="panel oz-result" data-oz="result" hidden></section></section><section class="panel oz-chat" aria-label="Oda sohbeti"><div class="oz-chat-heading"><h2>Sohbet & kelimeler</h2><span>Herkes yazabilir</span></div><ol class="oz-chat-history" data-oz="messages" data-testid="online-messages" role="log" aria-live="polite" aria-relevant="additions"></ol><form class="oz-composer" data-online-form="chat"><label class="hidden" for="oz-chat">Kelime ya da mesaj yaz</label><input id="oz-chat" class="oz-input" data-testid="online-chat-input" name="message" maxlength="160" placeholder="Kelime ya da mesaj yaz…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send"><button type="submit" class="btn gold oz-send" data-testid="online-send" aria-label="Gönder">${onlineIcon('arrow')}</button></form></section></div><div class="oz-room-footer">${this._button('ODADAN AYRIL', 'leave', 'white small', 'data-testid="online-leave"')}<span>Doğru kelime: +100 puan · Her sıra: 20 saniye</span></div>`, 'room', 'Kelime Savaşı');
+    this._shell(`<div class="oz-room-heading"><div><span class="oz-subtitle">ODA KODUN</span><button type="button" class="oz-room-code" data-online-action="copy-room" data-testid="online-room-code" aria-label="Oda kodunu kopyala">${onlineEscape(this.roomCode)}</button></div><span class="oz-connection" data-oz="connection" role="status">Bağlanıyor…</span></div><p class="oz-replaced" data-oz="replaced" hidden>Bu oda başka bir sekmede açık. ${this._button('BU SEKMEDE DEVAM ET', 'resume-room', 'white small')}</p><div class="oz-room-grid"><section class="oz-play"><section class="panel oz-lobby" data-oz="lobby"><span class="tag">ARKADAŞINLA BULUŞ</span><h2>Oda hazır. Sıra sizde!</h2><p>Bu kodu arkadaşına gönder. İkiniz de bağlandığınızda oda sahibi başlatabilir.</p><div class="oz-lobby-players" data-oz="lobby-players"></div><div data-oz="start-area"></div><details class="oz-invite-details"><summary>Bir arkadaşını davet et</summary><div data-oz="room-invites"></div></details></section><section class="oz-match" data-oz="match" hidden><div class="oz-scoreboard" data-oz="scoreboard"></div><div class="oz-countdown panel" data-oz="countdown" hidden><span>HAZIR MISINIZ?</span><strong data-oz="countdown-number" role="status">3</strong><p>Aynı zincir. Sırayla kelimeler.</p></div></section><section class="panel oz-result" data-oz="result" hidden></section></section><section class="panel oz-chat" aria-label="Oda sohbeti"><div class="oz-chat-heading"><h2>Sohbet & kelimeler</h2><span>Sıra sende olunca yaz</span></div><div class="oz-arena"><section class="oz-board" data-oz="board" hidden><div class="oz-current-word" data-oz="active-word" data-testid="online-active-word"></div><p class="oz-last-correct" data-oz="last-correct" role="status" hidden></p><p class="oz-round-info" data-oz="round-info"></p></section><ol class="oz-chat-history" data-oz="messages" data-testid="online-messages" role="log" aria-live="polite" aria-relevant="additions"></ol><div class="oz-turn-footer" data-oz="turn-footer" hidden><div class="oz-turn-row"><span class="oz-turn-avatar" data-oz="turn-avatar"></span><span class="oz-turn" data-oz="turn"></span><span class="oz-timer" data-oz="timer" aria-label="Kalan süre">30</span></div><div class="oz-timer-track"><i data-oz="timer-fill"></i></div></div></div><form class="oz-composer" data-online-form="chat"><label class="hidden" for="oz-chat">Cevabını yaz</label><input id="oz-chat" class="oz-input" data-testid="online-chat-input" name="message" maxlength="160" placeholder="Tur başlayınca yazabilirsin" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" disabled><button type="submit" class="btn gold oz-send" data-testid="online-send" disabled>CEVAPLA</button></form></section></div><div class="oz-room-footer">${this._button('ODADAN AYRIL', 'leave', 'white small', 'data-testid="online-leave"')}<span>Her sıra: 30 saniye · 2 tur kazanan maçı alır</span></div>`, 'room', 'Kelime Savaşı');
     this._updateRoomInvites(); this._positionComposer();
   }
 
@@ -258,37 +259,51 @@ export class OnlineScreen {
     socket.onerror = () => {};
   }
 
+  _canAnswer() {
+    return this.state?.phase === 'playing' && this.state.activePlayerId === this.profile?.id && Number(this.state.deadlineAt || 0) > Date.now() + this.clockOffset;
+  }
+
   _updateConnection() {
     if (this.view !== 'room') return;
     const status = this.app.querySelector('[data-oz="connection"]');
     status.textContent = ({ connected: 'Bağlı', connecting: 'Bağlanıyor…', syncing: 'Durum güncelleniyor…', reconnecting: 'Yeniden bağlanıyor…', replaced: 'Başka sekmede açık', finished: 'Karşılaşma bitti' })[this.connection];
     status.dataset.status = this.connection;
     const replaced = this.app.querySelector('[data-oz="replaced"]'); if (replaced) replaced.hidden = this.connection !== 'replaced';
-    const send = this.app.querySelector('[data-testid="online-send"]'); if (send) send.disabled = this.connection !== 'connected' || Boolean(this.pending);
+    const input = this.app.querySelector('[data-testid="online-chat-input"]');
+    const canAnswer = this.connection === 'connected' && this._canAnswer();
+    if (input) {
+      input.disabled = !canAnswer;
+      input.placeholder = this.state?.phase === 'playing' ? canAnswer ? 'Cevabını yaz…' : 'Sıra rakibinde…' : this.state?.phase === 'round_end' ? 'Sonraki tur için devam et' : 'Tur başlayınca yazabilirsin';
+    }
+    const send = this.app.querySelector('[data-testid="online-send"]'); if (send) send.disabled = !canAnswer || Boolean(this.pending);
     const start = this.app.querySelector('[data-testid="online-start"]'); if (start && this.connection !== 'connected') start.disabled = true;
   }
 
   _updateRoom() {
     if (!this.state || this.view !== 'room' || this.disposed) return;
-    const state = this.state, players = state.players;
+    const state = this.state, players = state.players, battle = state.phase !== 'waiting';
+    const main = this.app.querySelector('.oz-screen');
+    main.classList.toggle('oz-battle', battle); main.dataset.battlePhase = state.phase;
     this._updateConnection();
     this.app.querySelector('[data-oz="lobby"]').hidden = state.phase !== 'waiting';
-    this.app.querySelector('[data-oz="match"]').hidden = !['countdown', 'playing'].includes(state.phase);
-    this.app.querySelector('[data-oz="result"]').hidden = state.phase !== 'finished';
+    this.app.querySelector('[data-oz="match"]').hidden = !battle;
+    this.app.querySelector('[data-oz="result"]').hidden = !['round_end', 'finished'].includes(state.phase);
     this.app.querySelector('[data-oz="countdown"]').hidden = state.phase !== 'countdown';
-    this.app.querySelector('[data-oz="board"]').hidden = state.phase === 'countdown';
+    this.app.querySelector('[data-oz="board"]').hidden = state.phase !== 'playing';
+    this.app.querySelector('[data-oz="turn-footer"]').hidden = state.phase !== 'playing';
+    this.app.querySelector('.oz-chat').hidden = ['round_end', 'finished', 'countdown'].includes(state.phase);
     if (state.phase === 'waiting') {
       this.app.querySelector('[data-oz="lobby-players"]').innerHTML = [0, 1].map(index => {
         const player = players[index];
         return player ? `<div class="oz-player-slot"><span class="oz-avatar">${onlineEscape(player.name[0] || '?')}</span><strong>${onlineEscape(player.name)}</strong><small>${player.id === this.profile.id ? 'Sen · ' : ''}${player.connected ? 'Hazır' : 'Bağlanıyor…'}</small></div>` : `<div class="oz-player-slot empty">${onlineIcon('profile')}<strong>Arkadaşın bekleniyor</strong><small>Oda koduyla katılabilir.</small></div>`;
       }).join('');
-      const host = players[0]?.id === this.profile.id;
-      const ready = players.length === 2 && players.every(player => player.connected);
+      const host = players[0]?.id === this.profile.id, ready = players.length === 2 && players.every(player => player.connected);
       this.app.querySelector('[data-oz="start-area"]').innerHTML = host ? this._button('HAZIRIZ, BAŞLAYALIM! →', 'start', 'full', `data-testid="online-start" ${!ready || this.connection !== 'connected' ? 'disabled' : ''}`) : '<p class="oz-waiting">Oda sahibi başlattığında birlikte başlayacaksınız.</p>';
     }
-    this.app.querySelector('[data-oz="scoreboard"]').innerHTML = players.map(player => `<div class="oz-score ${player.id === state.activePlayerId ? 'active' : ''}"><span>${onlineEscape(player.name)}${player.id === this.profile.id ? ' <small>Sen</small>' : ''}</span><strong>${Number(player.score) || 0}</strong>${!player.connected ? '<small>Bağlantı bekleniyor…</small>' : ''}</div>`).join('');
+    const side = (player, index) => player ? `<div class="oz-battle-player ${player.id === state.activePlayerId ? 'active' : ''}"><span class="oz-battle-avatar side-${index}">${onlineEscape(player.name[0] || '?')}</span><strong>${onlineEscape(player.name)}</strong><small>#${onlineEscape(player.code)}${!player.connected ? ' · Bağlanıyor…' : ''}</small><span class="oz-round-points">${Number(player.score) || 0} puan</span></div>` : '';
+    this.app.querySelector('[data-oz="scoreboard"]').innerHTML = `${side(players[0],0)}<div class="oz-series"><span>${Math.min(3,Number(state.roundNumber)||1)}. TUR / 3</span><strong data-testid="online-series-score">${Number(players[0]?.roundWins)||0}<i>–</i>${Number(players[1]?.roundWins)||0}</strong><small>2 tur kazanan alır</small></div>${side(players[1],1)}`;
     if (state.phase === 'playing') this._updateBoard();
-    if (state.phase === 'finished') this._updateResult();
+    if (['round_end', 'finished'].includes(state.phase)) this._updateResult();
     this._updateMessages(); this._updateRoomInvites(); this._tick(); this._startClock(); this._positionComposer();
     if (this.pending && state.messages?.some(message => message.playerId === this.profile.id && message.clientMessageId === this.pending.id)) {
       const input = this.app.querySelector('[data-testid="online-chat-input"]');
@@ -299,54 +314,45 @@ export class OnlineScreen {
 
   _updateBoard() {
     const state = this.state, chain = Array.isArray(state.chain) ? state.chain : [], index = Number(state.activeIndex) || 0;
-    const active = chain[index], previous = chain[index - 1];
-    const player = state.players.find(item => item.id === state.activePlayerId);
-    this.app.querySelector('[data-oz="turn"]').textContent = state.activePlayerId === this.profile.id ? 'SIRA SENDE' : `${player?.name || 'Rakibin'} düşünüyor`;
-    this.app.querySelector('[data-oz="turn"]').classList.toggle('mine', state.activePlayerId === this.profile.id);
-    this.app.querySelector('[data-oz="chain-history"]').innerHTML = chain.slice(0, index).filter(item => item.stem).map(item => `<span class="oz-chain-chip ${item.status === 'skipped' ? 'skipped' : ''}">${onlineEscape(item.stem)}</span>`).join('<span aria-hidden="true">→</span>');
-    let caption = this.app.querySelector('[data-oz="last-correct"]');
-    if (!caption) { caption = document.createElement('p'); caption.dataset.oz = 'last-correct'; caption.className = 'oz-last-correct'; caption.setAttribute('role', 'status'); this.app.querySelector('[data-oz="chain-history"]').after(caption); }
-    const correct = state.lastCorrect;
-    caption.hidden = !correct || Date.now() + this.clockOffset - correct.at > 3500;
-    if (correct) {
-      caption.textContent = `${correct.answer} → ${correct.stem}`;
-      const key = `${correct.at}:${correct.index}`;
-      if (this.lastCorrectKey !== key && !matchMedia('(prefers-reduced-motion: reduce)').matches) caption.animate?.([{ opacity: 0.4, transform: 'translateY(3px)' }, { opacity: 1, transform: 'none' }], { duration: 180 });
-      this.lastCorrectKey = key;
-    }
+    const active = chain[index], previous = chain[index - 1], player = state.players.find(item => item.id === state.activePlayerId);
+    const mine = state.activePlayerId === this.profile.id;
+    this.app.querySelector('[data-oz="turn"]').textContent = mine ? `${this.profile.name} · Sıra sende` : `${player?.name || 'Rakibin'} · Sıra rakibinde`;
+    this.app.querySelector('[data-oz="turn"]').classList.toggle('mine', mine);
+    this.app.querySelector('[data-oz="turn-avatar"]').textContent = player?.name?.[0] || '?';
     const length = Math.min(32, Math.max(1, Number(active?.length) || 1));
-    this.app.querySelector('[data-oz="active-word"]').innerHTML = `<div class="oz-given">${onlineEscape(previous?.stem || 'İlk bağlantı')} <span>ile hangi kelime birleşir?</span></div><div class="oz-letter-grid" style="--oz-letters:${length}">${Array.from({ length }, (_, position) => `<span class="oz-letter ${position === 0 ? 'known' : ''}">${position === 0 ? onlineEscape(active?.first || '') : '·'}</span>`).join('')}</div>`;
-    this.app.querySelector('[data-oz="round-info"]').textContent = `${index + 1} / ${chain.length} kelime · Ekleriyle yaz; köküyle devam et.`;
+    this.app.querySelector('[data-oz="active-word"]').innerHTML = `<div class="oz-question"><span>${onlineEscape(previous?.stem || chain[0]?.stem || '')}</span><span class="oz-question-arrow" aria-hidden="true">→</span><span class="oz-question-mask">${onlineEscape(active?.first || '')}${'_'.repeat(Math.max(0,length-1))}</span></div>`;
+    const caption = this.app.querySelector('[data-oz="last-correct"]'), correct = state.lastCorrect;
+    caption.hidden = !correct || Date.now() + this.clockOffset - correct.at > 2800;
+    if (correct) caption.textContent = `${correct.answer} → ${correct.stem}`;
+    this.app.querySelector('[data-oz="round-info"]').textContent = `${index + 1} / ${chain.length} kelime`;
   }
 
   _updateMessages() {
     const messages = Array.isArray(this.state.messages) ? this.state.messages : [];
-    const signature = messages.map(message => message.id).join('|');
+    const signature = `${this.state.phase}:` + messages.map(message => message.id).join('|');
     if (signature === this.lastMessageIds) return;
     this.lastMessageIds = signature;
-    const list = this.app.querySelector('[data-oz="messages"]');
-    const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 50;
+    const list = this.app.querySelector('[data-oz="messages"]'), atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 50;
     list.innerHTML = messages.length ? messages.map(message => {
-      const kind = ['wrong', 'correct', 'system'].includes(message.kind) ? message.kind : 'chat';
-      const mine = message.playerId === this.profile.id;
-      const label = kind === 'wrong' ? 'Yanlış deneme' : kind === 'correct' ? 'Doğru cevap, 100 puan' : kind === 'system' ? 'Oda bilgisi' : 'Mesaj';
-      return `<li class="oz-message ${kind} ${mine ? 'mine' : ''}" data-kind="${kind}" data-testid="online-message" aria-label="${label}">${kind !== 'system' ? `<span class="oz-message-name">${onlineEscape(message.name)}${mine ? ' · Sen' : ''}</span>` : ''}<div class="oz-message-text">${kind === 'correct' ? '<span class="oz-message-mark" aria-hidden="true">✓</span>' : kind === 'wrong' ? '<span class="oz-message-mark" aria-hidden="true">×</span>' : ''}<span>${onlineEscape(message.text)}</span>${kind === 'correct' ? '<small>+100</small>' : ''}</div></li>`;
-    }).join('') : '<li class="oz-chat-empty">Buraya mesajını ya da sıra sendeyken tahminini yaz.</li>';
+      const kind = ['wrong', 'correct', 'system'].includes(message.kind) ? message.kind : 'chat', mine = message.playerId === this.profile.id;
+      const label = kind === 'wrong' ? 'Yanlış deneme' : kind === 'correct' ? 'Doğru cevap' : kind === 'system' ? 'Oda bilgisi' : 'Mesaj';
+      if (kind === 'system') return `<li class="oz-message system" data-kind="system" data-testid="online-message"><div class="oz-message-text">${onlineEscape(message.text)}</div></li>`;
+      const mark = kind === 'correct' ? '✓' : kind === 'wrong' ? '×' : '';
+      return `<li class="oz-message ${kind} ${mine ? 'mine' : ''}" data-kind="${kind}" data-testid="online-message" aria-label="${label}"><span class="oz-message-avatar" aria-hidden="true">${onlineEscape(message.name?.[0] || '?')}</span><div class="oz-message-body"><span class="oz-message-name">${onlineEscape(message.name)}${mine ? ' · Sen' : ''}</span><div class="oz-message-text"><span class="oz-answer">${onlineEscape(message.text)}</span>${mark ? `<span class="oz-message-mark" aria-hidden="true">${mark}</span>` : ''}</div></div></li>`;
+    }).join('') : '<li class="oz-chat-empty">Sıra sende olduğunda cevabını aşağıya yaz.</li>';
     if (atBottom || messages.at(-1)?.playerId === this.profile.id) list.scrollTop = list.scrollHeight;
   }
 
   _updateResult() {
-    const state = this.state, winner = state.players.find(player => player.id === state.winnerId);
-    const title = state.endReason === 'room_closed' ? 'Bu oda kapandı.' : !state.winnerId ? 'Dostça bir beraberlik!' : state.winnerId === this.profile.id ? 'Zincir sende!' : `${winner?.name || 'Rakibin'} bu turu kazandı!`;
-    const reason = state.tieBreak === 'speed' ? 'Puanlar eşitti. Doğru cevapları toplamda daha kısa sürede bulan oyuncu kazandı.' : ({ chain_complete: 'Zincirdeki bütün bağlantılar tamamlandı.', time_limit: 'Süre bitti. Sonuçları puanlar belirledi.', forfeit: 'Bir oyuncu ayrıldığı için karşılaşma sona erdi.', room_closed: 'Oda kapatıldı.', abandoned: 'Karşılaşma sona erdi.' })[state.endReason] || 'Güzel bir kelime yarışıydı!';
-    this.app.querySelector('[data-oz="result"]').innerHTML = `<img src="assets/mascot-editorial.webp" width="120" height="120" alt="Kelime maskotu"><span class="tag">KARŞILAŞMA TAMAMLANDI</span><h2>${onlineEscape(title)}</h2><p>${reason}</p><div class="oz-result-scores">${state.players.map(player => `<div><span>${onlineEscape(player.name)}</span><strong>${Number(player.score) || 0}</strong></div>`).join('')}</div>${this._button('YENİ BİR ODA →', 'new-room', 'full', 'data-testid="online-new-room"')}${this._button('ARKADAŞLARA DÖN', 'leave', 'white full')}`;
-    if (this.finishedRoom !== this.roomCode) {
+    const state = this.state, between = state.phase === 'round_end', result = state.roundResult || {}, winnerId = between ? result.winnerId : state.winnerId;
+    const winner = state.players.find(player => player.id === winnerId), ownReady = (state.continueReady || []).includes(this.profile.id);
+    const title = between ? !winnerId ? 'Tur berabere!' : winnerId === this.profile.id ? 'Bu tur senin!' : `${winner?.name || 'Rakibin'} turu aldı!` : state.endReason === 'room_closed' ? 'Bu oda kapandı.' : !winnerId ? 'Karşılaşma tamamlandı.' : winnerId === this.profile.id ? 'Maçı kazandın!' : `${winner?.name || 'Rakibin'} kazandı!`;
+    const reason = between ? !winnerId ? 'Bu tur yeniden oynanacak. İlk 2 turu kazanan maçı alır.' : (result.tieBreak === 'speed' ? 'Puanlar eşitti; daha hızlı doğru cevaplar turu belirledi.' : 'Bir zincir tamamlandı. Sıradaki tura geçelim.') : state.endReason === 'forfeit' ? 'Rakip ayrıldığı için karşılaşma sona erdi.' : 'İki turu kazanan oyuncu maçı aldı.';
+    this.app.querySelector('[data-oz="result"]').innerHTML = `<span class="tag">${between ? `${state.roundNumber || 1}. TUR TAMAMLANDI` : 'MAÇ TAMAMLANDI'}</span><h2>${onlineEscape(title)}</h2><p>${onlineEscape(reason)}</p><div class="oz-result-scores">${state.players.map(player => `<div><span>${onlineEscape(player.name)}</span><strong>${Number(player.roundWins) || 0}</strong><small>tur</small></div>`).join('')}</div>${between ? this._button(ownReady ? 'RAKİBİN BEKLENİYOR…' : 'DEVAM ET →', 'continue', 'full', `data-testid="online-continue" ${ownReady || this.connection !== 'connected' ? 'disabled' : ''}`) : this._button('ARKADAŞLARA DÖN', 'leave', 'white full')}`;
+    const input = this.app.querySelector('[data-testid="online-chat-input"]'); if (document.activeElement === input) input.blur();
+    if (!between && this.finishedRoom !== this.roomCode) {
       this.finishedRoom = this.roomCode; this._persist();
-      const input = this.app.querySelector('[data-testid="online-chat-input"]');
-      if (document.activeElement === input) input.blur();
-      this.app.querySelector('.oz-screen').classList.remove('oz-typing');
-      requestAnimationFrame(() => { if (!this.disposed && this.state?.phase === 'finished') this.app.querySelector('[data-oz="result"]')?.scrollIntoView({ block: 'start', behavior: 'instant' }); });
-      this._api('/v1/me').then(result => { if (!this.disposed) { this.profile = result.profile; this._persist(); } }).catch(() => {});
+      this._api('/v1/me').then(response => { if (!this.disposed) { this.profile = response.profile; this._persist(); } }).catch(() => {});
     }
   }
 
@@ -368,8 +374,9 @@ export class OnlineScreen {
     const seconds = Math.ceil(remaining / 1000);
     const countdown = this.app.querySelector('[data-oz="countdown-number"]'); if (countdown && countdown.textContent !== String(seconds)) countdown.textContent = String(seconds);
     const timer = this.app.querySelector('[data-oz="timer"]'); if (timer) { timer.textContent = String(seconds); timer.classList.toggle('urgent', seconds <= 5); }
-    const fill = this.app.querySelector('[data-oz="timer-fill"]'); if (fill) fill.style.transform = `scaleX(${Math.min(1, remaining / 20000)})`;
+    const fill = this.app.querySelector('[data-oz="timer-fill"]'); if (fill) fill.style.transform = `scaleX(${Math.min(1, remaining / 30000)})`;
     const caption = this.app.querySelector('[data-oz="last-correct"]'); if (caption && this.state.lastCorrect && Date.now() + this.clockOffset - this.state.lastCorrect.at > 3500) caption.hidden = true;
+    this._updateConnection();
     if (!['countdown', 'playing'].includes(this.state.phase)) this._stopClock();
   }
 
@@ -377,6 +384,7 @@ export class OnlineScreen {
     const input = this.app.querySelector('[data-testid="online-chat-input"]');
     const text = input?.value.trim(); if (!text || this.pending) return;
     if (!this._socketOpen(this.roomSocket) || this.connection !== 'connected' || !this.state) { this._toast('Bağlantı yenilenince mesajını gönderebilirsin.'); return; }
+    if (!this._canAnswer()) { this._toast(onlineReasons.not_your_turn); return; }
     this.pending = { id: onlineId(), text, turnId: this.state.turnId };
     input.value = text;
     this.roomSocket.send(JSON.stringify({ type: 'chat', text, messageId: this.pending.id, turnId: this.pending.turnId }));
@@ -385,20 +393,11 @@ export class OnlineScreen {
 
   _positionComposer() {
     if (this.disposed || this.view !== 'room') return;
-    const main = this.app.querySelector('.oz-screen');
-    const focused = document.activeElement?.matches('[data-testid="online-chat-input"]');
-    const visibleHeight = window.visualViewport?.height || innerHeight;
-    const keyboardOpen = visibleHeight < 500 || innerHeight - visibleHeight > 100;
-    main.classList.toggle('oz-typing', focused && keyboardOpen && this.state?.phase === 'playing' && matchMedia('(max-width:759px)').matches);
+    const main = this.app.querySelector('.oz-screen'), visibleHeight = window.visualViewport?.height || innerHeight;
     main.style.setProperty('--oz-vh', `${visibleHeight}px`);
-    if (focused) requestAnimationFrame(() => {
-      if (this.disposed) return;
-      const composer = this.app.querySelector('.oz-composer'), board = this.app.querySelector('[data-oz="board"]');
-      const visibleHeight = window.visualViewport?.height || innerHeight;
-      if (board && !board.hidden && composer.getBoundingClientRect().bottom - board.getBoundingClientRect().top < visibleHeight - 16) {
-        window.scrollBy({ top: board.getBoundingClientRect().top - 8, behavior: 'instant' });
-      } else composer?.scrollIntoView({ block: 'end', behavior: 'instant' });
-    });
+    const compact = this.state?.phase === 'playing' && visibleHeight < 500 && matchMedia('(max-width:759px)').matches;
+    main.classList.toggle('oz-typing', compact);
+    if (this.state?.phase !== 'waiting' && window.scrollY) window.scrollTo(0, 0);
   }
 
   async _askLeave() {
@@ -413,7 +412,7 @@ export class OnlineScreen {
   }
 
   async _leave(home = false) {
-    if (['countdown', 'playing'].includes(this.state?.phase) && !await this._askLeave()) return;
+    if (['countdown', 'playing', 'round_end'].includes(this.state?.phase) && !await this._askLeave()) return;
     if (this._socketOpen(this.roomSocket)) this.roomSocket.send(JSON.stringify({ type: 'leave' }));
     this._closeRoom(); this._stopClock(); this.roomCode = ''; this.state = null; this.pending = null; this._persist();
     if (home) { this.destroy(); this.onHome(); }
@@ -464,6 +463,7 @@ export class OnlineScreen {
       else this._toast(`Kodun: ${value}`);
       return;
     }
+    if (action === 'continue') { if (this.state?.phase === 'round_end' && !(this.state.continueReady || []).includes(this.profile.id) && this._socketOpen(this.roomSocket)) { button.disabled = true; this.roomSocket.send(JSON.stringify({ type: 'continue' })); } return; }
     if (action === 'start') { if (this._socketOpen(this.roomSocket)) this.roomSocket.send(JSON.stringify({ type: 'start' })); return; }
     if (action === 'resume-room') { this._closeRoom(); this._connectRoom(); return; }
     if (action === 'create') this._busyAction('create', () => this._enterRoom('', true));

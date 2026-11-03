@@ -242,10 +242,10 @@ test('real Durable Objects: device accounts, social graph and authoritative two-
       assert.equal(playing[0].deadlineAt, playing[1].deadlineAt);
       assert.equal(playing[0].activePlayerId, playing[1].activePlayerId);
       assert.equal(playing[0].turnId, playing[1].turnId);
-      assert.equal(playing[0].deadlineAt - playing[0].serverNow <= 20_000, true);
+      assert.equal(playing[0].deadlineAt - playing[0].serverNow <= 30_000, true);
     });
 
-    await stage('neutral chat, red wrong guesses, checked correct answer and race guards are authoritative', async () => {
+    await stage('active-only chat, red wrong guesses, checked correct answer and race guards are authoritative', async () => {
       const initial = hostSocket.state;
       const eligible = bank.filter(chain => chain.words[0] === initial.chain[0].stem && chain.answers.every((answer, index) => index === 0 || answer[0] === initial.chain[index].first && answer.length === initial.chain[index].length));
       assert.equal(eligible.length, 1, 'The configured private test bank should identify the server-selected chain.');
@@ -259,8 +259,9 @@ test('real Durable Objects: device accounts, social graph and authoritative two-
       const turn = initial.turnId;
       let mark = active.mark();
       chat(inactive, winner, chain.answers[1]);
-      const inactiveGuess = await active.waitState(state => state.messages.at(-1)?.playerId === winner.profile.id && state.messages.at(-1)?.kind === 'chat', mark);
-      assert.equal(inactiveGuess.players.every(player => player.score === 0), true);
+      await inactive.wait(message => message.type === 'error' && message.reason === 'not_your_turn');
+      assert.equal(active.state.players.every(player => player.score === 0), true);
+      assert.equal(active.state.messages.some(message => message.playerId === winner.profile.id), false);
       mark = active.mark();
       chat(active, firstScorer, 'naber lan');
       await active.waitState(state => state.messages.at(-1)?.text === 'naber lan' && state.messages.at(-1)?.kind === 'chat', mark);

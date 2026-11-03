@@ -88,7 +88,13 @@ func put_json(path: String, value: Dictionary) -> void:
 	file.close()
 
 func snapshot(phase: String = "playing") -> Dictionary:
-	return {"roomCode": "ABC234", "phase": phase, "players": [{"id": "fixture-a", "name": "Gökçen", "code": "1465", "score": 0, "connected": true}, {"id": "fixture-b", "name": "Abcdefghijklmnopqr", "code": "1466", "score": 0, "connected": true}], "activePlayerId": "fixture-a", "deadlineAt": Client.local_now_ms() + (3000 if phase == "countdown" else 20000), "serverNow": Client.local_now_ms(), "turnId": 1, "activeIndex": 1, "chain": [{"stem": "ÇAY", "answer": "ÇAY", "status": "solved"}, {"first": "K", "length": 6, "status": "hidden"}, {"first": "O", "length": 5, "status": "hidden"}, {"first": "H", "length": 6, "status": "hidden"}, {"first": "D", "length": 6, "status": "hidden"}], "messages": [], "winnerId": null, "lastCorrect": null}
+	return {"roomCode": "ABC234", "phase": phase, "players": [{"id": "fixture-a", "name": "Gökçen", "code": "1465", "score": 0, "roundWins": 0, "connected": true}, {"id": "fixture-b", "name": "Abcdefghijklmnopqr", "code": "1466", "score": 0, "roundWins": 0, "connected": true}], "activePlayerId": "fixture-a", "deadlineAt": Client.local_now_ms() + (3000 if phase == "countdown" else 30000), "serverNow": Client.local_now_ms(), "turnId": 1, "activeIndex": 1, "chain": [{"stem": "ÇAY", "answer": "ÇAY", "status": "solved"}, {"first": "K", "length": 6, "status": "hidden"}, {"first": "O", "length": 5, "status": "hidden"}, {"first": "H", "length": 6, "status": "hidden"}, {"first": "D", "length": 6, "status": "hidden"}], "messages": [], "winnerId": null, "lastCorrect": null, "roundNumber": 1, "roundResult": null, "continueReady": []}
+
+func has_wrong_label(node: Node) -> bool:
+	if node is Screen.WrongGuessLabel: return true
+	for child in node.get_children():
+		if has_wrong_label(child): return true
+	return false
 
 func check_layout(label: String) -> void:
 	var minimum = view.get_combined_minimum_size().x
@@ -151,8 +157,8 @@ func _run() -> void:
 	state = snapshot()
 	fake.receive_packet({"type": "state", "state": state})
 	await settle()
-	check(view._chain_list.get_child_count() == 5 and view._chain_list.get_child(1).cells.size() == 6, "Online chain should show five cells and the inflected target's exact letter count.")
-	check(view._composer_clue.text.contains("ÇAY + K"), "Active clue and live remaining time should stay beside the phone's chat input.")
+	check(view._question_label.text == "ÇAY → K_____", "The battle question should be one SU → B_____ style strip with inflected answer length.")
+	check(view._clock_label.text.contains("30") and view._chat_input.editable, "The active player should receive a thirty-second editable turn.")
 	await capture_frame("native-online-playing.png")
 	var input_id = view._chat_input.get_instance_id()
 	view._chat_input.text = "kaşık"
@@ -172,7 +178,7 @@ func _run() -> void:
 	check(view._chat_input.text.is_empty() and view._pending_message_id.is_empty(), "Own clientMessageId acknowledgement should clear exactly the submitted draft.")
 	check(fake.room_state.activeIndex == 1 and fake.room_state.turnId == 1, "Wrong answers must not locally advance the authoritative turn.")
 	var bubble = view._message_nodes["2"]
-	check(bubble.get_child(0).get_child(1) is Screen.WrongGuessLabel, "Wrong guesses should render with a red strike label.")
+	check(has_wrong_label(bubble), "Wrong guesses should render with a red strike label.")
 	view._chat_input.text = "[b]sohbet[/b]"
 	view._send_chat()
 	var undelivered = view._pending_message_id
@@ -198,9 +204,21 @@ func _run() -> void:
 	state.messages.append({"id": "3", "playerId": "fixture-b", "name": "Deniz", "text": "naber lan", "kind": "chat", "at": Client.local_now_ms()})
 	state.messages.append({"id": "4", "playerId": "fixture-a", "name": "Gökçen", "text": "kaşığı", "kind": "correct", "at": Client.local_now_ms()})
 	fake.receive_packet({"type": "state", "state": state})
-	check(view._chain_list.get_child(1).word == "KAŞIĞI", "Public correct answer should appear before its short stem transition.")
-	await create_timer(0.5).timeout
-	check(view._chain_list.get_child(1).word == "KAŞIK", "Online answer presentation should transform into the revealed stem.")
+	check(view._correct_label.text == "KAŞIĞI → KAŞIK", "Accepted inflected answers should show their short stem explanation.")
+	check(view._question_label.text == "KAŞIK → O____", "The next question should use the correctly revealed stem.")
+	check(not view._chat_input.editable and view._send_button.disabled, "The inactive player must not type or send during the opponent's turn.")
+	check(fake.send_chat("naber lan").is_empty() and fake.last_error == "not_your_turn", "The native transport must reject inactive-player conversation before sending.")
+	root.size = Vector2i(320, 300)
+	view._error_label.hide()
+	view._update_battle_layout()
+	await settle()
+	scroller.scroll_vertical = 0
+	await settle()
+	check(view._question_label.get_global_rect().position.y >= 0 and view._chat_input.get_global_rect().end.y <= 301, "Question/composer should fit 320×300: %s / %s" % [view._question_label.get_global_rect(), view._chat_input.get_global_rect()])
+	await capture_frame("native-online-keyboard-battle.png")
+	root.size = Vector2i(390, 844)
+	view._update_battle_layout()
+	await settle()
 	if OS.get_environment("ZINCIR_CAPTURE_ONLINE") == "1":
 		root.size = Vector2i(390, 844)
 		view._chat_input.text = ""
@@ -214,12 +232,28 @@ func _run() -> void:
 	check(is_instance_valid(view._leave_prompt) and not returned_home, "Back during a match should ask before forfeiting.")
 	view.request_home()
 	check(not is_instance_valid(view._leave_prompt) and view._chat_input.text == "[b]sohbet[/b]", "Cancelling a leave prompt should preserve the draft.")
+	state.phase = "round_end"
+	state.players[0].roundWins = 1
+	state.roundResult = {"winnerId": "fixture-a", "tieBreak": "speed", "scores": [{"id": "fixture-a", "score": 200}, {"id": "fixture-b", "score": 200}]}
+	state.continueReady = []
+	fake.receive_packet({"type": "state", "state": state})
+	check(view._continue_button.visible and not view._continue_button.disabled and not view._chat_input.editable, "A completed round should offer Continue and keep answer input locked.")
+	view._continue_button.pressed.emit()
+	check(fake.sent.back().type == "continue", "Continue must send a server command without locally inventing a round.")
+	state.continueReady = ["fixture-a"]
+	fake.receive_packet({"type": "state", "state": state})
+	check(view._continue_button.disabled and view._continue_button.text.contains("BEKLENİYOR"), "The first ready player should wait for the opponent.")
 	state.phase = "finished"
+	state.players[0].roundWins = 2
 	state.winnerId = "fixture-a"
 	state.tieBreak = "speed"
 	state.endReason = "chain_complete"
 	fake.receive_packet({"type": "state", "state": state})
-	check(view._turn_label.text.contains("Puanlar eşitti"), "Speed tie-break should be explained rather than presented as a score-only win.")
+	check(view._result_text.text.contains("2 – 0") and not view._continue_button.visible, "A 2–0 series should finish without an extra Continue action.")
+	state.players[1].roundWins = 1
+	state.roundNumber = 3
+	fake.receive_packet({"type": "state", "state": state})
+	check(view._result_text.text.contains("2 – 1") and not view._continue_button.visible, "A deciding third round should show the 2–1 final series result.")
 	var reload = Client.new()
 	reload.account_path = fake.account_path
 	reload.load_account()
@@ -294,30 +328,36 @@ func _actual_transport() -> void:
 	check(await wait_for(func(): return a.room_state.get("players", []).size() == 2 and b.room_snapshot_ready), "Both native sockets should observe the same two-player room.")
 	check(a.start_match(), "Host should send start over the actual WebSocket.")
 	check(await wait_for(func(): return a.room_state.get("phase", "") == "countdown"), "Server should begin the real three-second countdown.")
-	check(await wait_for(func(): return a.room_state.get("phase", "") == "playing", 6000), "Server should enter a real twenty-second turn.")
+	check(await wait_for(func(): return a.room_state.get("phase", "") == "playing", 6000), "Server should enter a real thirty-second turn.")
 	if a.room_state.get("phase", "") != "playing": a.queue_free(); b.queue_free(); await settle(); return
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://backend/private/chains.json"))
-	var chain: Dictionary = {}
-	for candidate: Dictionary in parsed:
-		var matches = candidate.words[0] == a.room_state.chain[0].stem
+	for round_index in 3:
+		var chain: Dictionary = {}
+		for candidate: Dictionary in parsed:
+			var matches = candidate.words[0] == a.room_state.chain[0].stem
+			for i in range(1, 5):
+				matches = matches and candidate.answers[i].substr(0, 1) == a.room_state.chain[i].first and candidate.answers[i].length() == a.room_state.chain[i].length
+			if matches: chain = candidate; break
+		check(not chain.is_empty(), "Test-only private bank should identify the fixture without shipping hidden answers to clients.")
+		if chain.is_empty(): break
+		var active = a if a.room_state.activePlayerId == a.profile.id else b
+		var other = b if active == a else a
+		check(other.send_chat("naber lan").is_empty() and other.last_error == "not_your_turn", "The inactive real native player must not send conversation or guesses.")
+		var chat_id = active.send_chat("naber lan")
+		check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == chat_id and message.kind == "chat")), "Active-player conversation should still be plain chat.")
+		var wrong_id = active.send_chat("yanlıştır")
+		check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == wrong_id and message.kind == "wrong")), "A wrong active guess should not end the thirty-second budget.")
 		for i in range(1, 5):
-			matches = matches and candidate.answers[i].substr(0, 1) == a.room_state.chain[i].first and candidate.answers[i].length() == a.room_state.chain[i].length
-		if matches: chain = candidate; break
-	check(not chain.is_empty(), "Test-only private bank should identify the local fixture without shipping it to clients.")
-	if chain.is_empty(): a.queue_free(); b.queue_free(); await settle(); return
-	var active = a if a.room_state.activePlayerId == a.profile.id else b
-	var other = b if active == a else a
-	var chat_id = other.send_chat("naber lan")
-	check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == chat_id and message.kind == "chat")), "Inactive player multiword chat should be neutral conversation.")
-	var wrong_id = active.send_chat("yanlıştır")
-	check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == wrong_id and message.kind == "wrong")), "Actual server should mark a wrong active guess without ending the turn.")
-	check(a.room_state.activeIndex == 1, "Wrong real guess should leave the same word active.")
-	for i in range(1, 5):
-		active = a if a.room_state.activePlayerId == a.profile.id else b
-		await create_timer(0.15 if i % 2 == 0 else 0.35).timeout
-		var correct_id = active.send_chat(str(chain.answers[i]))
-		check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == correct_id and message.kind == "correct")), "Actual native inflected answer should receive its own acknowledgement and score.")
-	check(a.room_state.phase == "finished" and a.room_state.get("tieBreak", "") == "speed", "A complete equal-score native match should use the server-measured speed tie-break.")
+			active = a if a.room_state.activePlayerId == a.profile.id else b
+			await create_timer(0.1 if active == a else 0.4).timeout
+			var correct_id = active.send_chat(str(chain.answers[i]))
+			check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == correct_id and message.kind == "correct")), "Actual native inflected answer should receive its own acknowledgement and score.")
+		check(a.room_state.phase in ["round_end", "finished"], "A complete chain should end its round, not create an unrelated room.")
+		if a.room_state.phase == "finished": break
+		check(a.send_continue() and b.send_continue(), "Both native players should continue in the same room.")
+		check(await wait_for(func(): return a.room_state.get("phase", "") == "countdown"), "Both Continue actions should start the next round countdown.")
+		check(await wait_for(func(): return a.room_state.get("phase", "") == "playing", 6000), "The next five-word round should begin after its real countdown.")
+	check(a.room_state.phase == "finished" and a.room_state.players.any(func(player): return int(player.get("roundWins", 0)) == 2), "A native series must end at two round wins with 2–0 or 2–1.")
 	check(await wait_for(func(): return int(a.profile.get("played", 0)) >= 1 and int(b.profile.get("played", 0)) >= 1), "Finished native match should refresh persistent played/win profile statistics.")
 	var copy = Client.new()
 	copy.account_path = a.account_path

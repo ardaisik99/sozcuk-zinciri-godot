@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createMatch, joinMatch, startMatch, sendMessage, advanceTime, leaveMatch,
+  createMatch, joinMatch, startMatch, sendMessage, advanceTime, leaveMatch, continueRound,
   publicMatch, nextAlarm, normalizeAnswer, COUNTDOWN_MS, TURN_MS, MATCH_MS,
   MESSAGE_HISTORY_LIMIT, PUBLIC_MESSAGE_LIMIT, RECENT_MESSAGE_LIMIT,
 } from '../src/match.mjs';
@@ -112,7 +112,7 @@ test('three-second synchronized countdown is real, no early guess can score', ()
   assert.equal(match.matchEndsAt, START + MATCH_MS);
   assert.equal(match.startedAt, null, 'A planned countdown must not count as a played match.');
   const early = send(match, host.id, 'KAŞIĞI', START - 1);
-  assert.equal(early.kind, 'chat');
+  assert.equal(early.reason, 'not_playing');
   assert.equal(score(match, host.id), 0);
   assert.equal(match.phase, 'countdown');
   advanceTime(match, START);
@@ -122,7 +122,7 @@ test('three-second synchronized countdown is real, no early guess can score', ()
   assert.equal(match.deadlineAt, START + TURN_MS);
 });
 
-test('wrong single-word guesses turn red but preserve the same 20-second budget', () => {
+test('wrong single-word guesses turn red but preserve the same 30-second budget', () => {
   const match = running();
   const turn = match.turnId;
   const deadline = match.deadlineAt;
@@ -137,12 +137,14 @@ test('wrong single-word guesses turn red but preserve the same 20-second budget'
   }
 });
 
-test('sentences and punctuated conversation stay neutral; inactive player never guesses', () => {
+test('active-player conversation is neutral and inactive players cannot send any messages', () => {
   const match = running();
   const turn = match.turnId;
   const deadline = match.deadlineAt;
   for (const text of ['naber lan', 'merhaba!', '<b>selam</b>']) assert.equal(send(match, host.id, text).kind, 'chat');
-  assert.equal(send(match, guest.id, 'KAŞIĞI').kind, 'chat');
+  const history=match.messages.length;
+  for(const text of ['KAŞIĞI','naber lan','merhaba!'])assert.equal(send(match, guest.id, text).reason, 'not_your_turn');
+  assert.equal(match.messages.length,history);
   assert.equal(match.turnId, turn);
   assert.equal(match.deadlineAt, deadline);
   assert.deepEqual(match.players.map(player => player.score), [0, 0]);
@@ -191,7 +193,7 @@ test('deadline boundary is exclusive and a late message advances the clock befor
   const deadline = match.deadlineAt;
   const turn = match.turnId;
   const late = send(match, host.id, 'KAŞIĞI', deadline, { turnId: turn });
-  assert.equal(late.reason, 'stale_turn');
+  assert.equal(late.reason, 'not_your_turn');
   assert.equal(late.changed, true);
   assert.equal(match.activePlayerId, guest.id);
   assert.equal(score(match, host.id), 0);
@@ -238,12 +240,13 @@ test('a correct answer resets consecutive timeout count for the next word', () =
   assert.equal(match.chain[2].status, 'hidden');
 });
 
-test('late/retried alarms terminate an idle match deterministically with a draw', () => {
+test('late/retried alarms end an idle round deterministically without consuming a series round', () => {
   const match = running();
   advanceTime(match, START + 10 * TURN_MS);
-  assert.equal(match.phase, 'finished');
-  assert.equal(match.finishedAt, START + 8 * TURN_MS);
-  assert.equal(match.endReason, 'chain_complete');
+  assert.equal(match.phase, 'round_end');
+  assert.equal(match.finishedAt, null);
+  assert.equal(match.roundEndedAt, START + 8 * TURN_MS);
+  assert.equal(match.roundResult.reason, 'chain_complete');
   assert.equal(match.winnerId, null);
   assert.equal(nextAlarm(match), null);
   assert.equal(match.chain.slice(1).every(cell => cell.status === 'skipped'), true);
@@ -252,11 +255,11 @@ test('late/retried alarms terminate an idle match deterministically with a draw'
   assert.equal(JSON.stringify(match), serialized);
 });
 
-test('four alternating correct answers with equal response time finish as a true draw', () => {
+test('four alternating correct answers with equal response time draw the round', () => {
   const match = running();
   for (let index = 1; index < 5; index++) assert.equal(send(match, match.activePlayerId, target(match), START + index).kind, 'correct');
-  assert.equal(match.phase, 'finished');
-  assert.equal(match.endReason, 'chain_complete');
+  assert.equal(match.phase, 'round_end');
+  assert.equal(match.roundResult.reason, 'chain_complete');
   assert.deepEqual(match.players.map(player => player.score), [200, 200]);
   assert.equal(match.winnerId, null);
   assert.equal(match.tieBreak, null);
@@ -274,7 +277,7 @@ test('equal positive scores use total server-measured correct response time as s
   }
   assert.deepEqual(match.players.map(player => player.score), [200, 200]);
   assert.deepEqual(match.players.map(player => player.responseMs), [20, 40]);
-  assert.equal(match.winnerId, host.id);
+  assert.equal(match.roundResult.winnerId, host.id);
   assert.equal(match.tieBreak, 'speed');
   const view = publicMatch(match, now);
   assert.equal(view.tieBreak, 'speed');
@@ -292,7 +295,7 @@ test('winner is the higher score; a skipped opportunity cannot produce points', 
     now += 1;
     assert.equal(send(match, host.id, target(match), now).kind, 'correct');
   }
-  assert.equal(match.winnerId, host.id);
+  assert.equal(match.roundResult.winnerId, host.id);
   assert.deepEqual(match.players.map(player => player.score), [400, 0]);
 });
 
@@ -301,8 +304,8 @@ test('hard lifetime deadline finishes before any later turn event', () => {
   match.matchEndsAt = START + 5_000;
   assert.equal(nextAlarm(match), START + 5_000);
   advanceTime(match, START + 50_000);
-  assert.equal(match.endReason, 'time_limit');
-  assert.equal(match.finishedAt, START + 5_000);
+  assert.equal(match.roundResult.reason, 'time_limit');
+  assert.equal(match.roundEndedAt, START + 5_000);
   assert.equal(match.winnerId, null);
   assert.equal(match.chain[1].status, 'hidden');
 });
@@ -385,7 +388,7 @@ test('public snapshots never contain hidden stems, answers, bank metadata or mut
 
 test('chat history and recent idempotency state are bounded, public history keeps latest 60', () => {
   const match = running();
-  for (let i = 0; i < 150; i++) assert.equal(send(match, guest.id, `sohbet ${i}`).kind, 'chat');
+  for (let i = 0; i < 150; i++) assert.equal(send(match, host.id, `sohbet ${i}`).kind, 'chat');
   assert.equal(match.messages.length, MESSAGE_HISTORY_LIMIT);
   assert.equal(match.recentMessageIds.length, RECENT_MESSAGE_LIMIT);
   const view = publicMatch(match, START + 1);
@@ -410,4 +413,168 @@ test('persisted JSON state resumes a pending turn and the configurable starter d
   assert.equal(restored.activeIndex, 2);
   assert.equal(restored.activePlayerId, guest.id);
   assert.equal(restored.consecutiveTimeouts, 1);
+});
+
+function decisiveRound(match,winnerId) {
+  if(match.phase==='countdown')advanceTime(match,match.deadlineAt);
+  let now=match.roundStartedAt;
+  while(match.phase==='playing'){
+    now+=match.activePlayerId===winnerId?10:100;
+    assert.equal(send(match,match.activePlayerId,target(match),now).kind,'correct');
+  }
+  assert.equal(match.roundResult.winnerId,winnerId);
+  return now;
+}
+function readyBoth(match,chain=RECORD_CHAIN) {
+  const now=match.roundEndedAt+1;
+  assert.equal(continueRound(match,host.id,chain,now).ok,true);
+  assert.equal(continueRound(match,guest.id,chain,now+1).ok,true);
+  assert.equal(match.phase,'countdown');
+  return now+1;
+}
+
+test('two wins end the series 2-0 without opening a third round',()=>{
+  const match=running();
+  decisiveRound(match,host.id);
+  assert.equal(match.phase,'round_end');
+  assert.deepEqual(match.players.map(p=>p.roundWins),[1,0]);
+  assert.equal(match.winnerId,null,'The first round does not decide the whole match.');
+  const began=match.startedAt;
+  readyBoth(match);
+  assert.equal(match.roundNumber,2);
+  assert.equal(match.startedAt,began,'Global played state must survive the next countdown.');
+  decisiveRound(match,host.id);
+  assert.equal(match.phase,'finished');
+  assert.equal(match.endReason,'series_complete');
+  assert.equal(match.winnerId,host.id);
+  assert.deepEqual(match.players.map(p=>p.roundWins),[2,0]);
+  assert.equal(continueRound(match,guest.id,TEST_CHAIN,match.finishedAt+1).reason,'not_round_end');
+});
+
+test('split first rounds continue into a third decisive round and finish 2-1',()=>{
+  const match=running();
+  decisiveRound(match,host.id);readyBoth(match);
+  decisiveRound(match,guest.id);
+  assert.equal(match.phase,'round_end');
+  assert.deepEqual(match.players.map(p=>p.roundWins),[1,1]);
+  readyBoth(match,TEST_CHAIN);
+  assert.equal(match.roundNumber,3);
+  decisiveRound(match,guest.id);
+  assert.equal(match.phase,'finished');
+  assert.equal(match.winnerId,guest.id);
+  assert.deepEqual(match.players.map(p=>p.roundWins),[1,2]);
+  assert.equal(publicMatch(match,match.finishedAt).maxRounds,3);
+  assert.equal(publicMatch(match,match.finishedAt).winsToWin,2);
+});
+
+test('both players must continue; duplicate readiness cannot start a new round alone',()=>{
+  const match=running();decisiveRound(match,host.id);
+  const ended=match.roundEndedAt,turn=match.turnId,current=match.currentChainId;
+  assert.equal(continueRound(match,outsider.id,RECORD_CHAIN,ended+1).reason,'not_player');
+  assert.equal(continueRound(match,host.id,RECORD_CHAIN,ended+1).ok,true);
+  assert.equal(match.phase,'round_end');
+  assert.equal(match.deadlineAt,null);
+  assert.equal(match.currentChainId,current,'Do not install the candidate until both players are ready.');
+  assert.equal(match.usedChainIds.includes(RECORD_CHAIN.id),false);
+  const duplicate=continueRound(match,host.id,RECORD_CHAIN,ended+2);
+  assert.equal(duplicate.duplicate,true);
+  assert.equal(duplicate.changed,false);
+  assert.deepEqual(match.continueReady,[host.id]);
+  assert.equal(match.turnId,turn);
+  const restored=JSON.parse(JSON.stringify(match));
+  assert.equal(continueRound(restored,guest.id,RECORD_CHAIN,ended+3).ok,true);
+  assert.equal(restored.currentChainId,RECORD_CHAIN.id);
+  assert.deepEqual(restored.usedChainIds,[TEST_CHAIN.id,RECORD_CHAIN.id]);
+  assert.equal(restored.startingPlayerIndex,1);
+  assert.deepEqual(restored.players.map(p=>p.score),[0,0]);
+  assert.deepEqual(restored.players.map(p=>p.responseMs),[0,0]);
+  assert.equal(restored.lastCorrect,null);
+  assert.equal(restored.messages.length,1,'Only the new-round system notice remains.');
+  assert.equal(continueRound(restored,guest.id,RECORD_CHAIN,ended+4).reason,'not_round_end');
+});
+
+test('drawn round repeats its ordinal without awarding a series win',()=>{
+  const match=running();
+  let now=START;
+  while(match.phase==='playing'){
+    now+=10;
+    send(match,match.activePlayerId,target(match),now);
+  }
+  assert.equal(match.roundResult.winnerId,null);
+  assert.deepEqual(match.players.map(p=>p.roundWins),[0,0]);
+  readyBoth(match);
+  assert.equal(match.roundNumber,1);
+  decisiveRound(match,guest.id);
+  assert.equal(match.phase,'round_end');
+  assert.deepEqual(match.players.map(p=>p.roundWins),[0,1]);
+});
+
+test('messages are locked outside play and at exactly 30 seconds the old player loses write access',()=>{
+  assert.equal(TURN_MS,30000);
+  const match=running();
+  const deadline=match.deadlineAt;
+  assert.equal(deadline-START,30000);
+  assert.equal(send(match,host.id,'naber lan',deadline-1).kind,'chat');
+  const history=match.messages.length;
+  assert.equal(send(match,guest.id,'naber lan',deadline-1).reason,'not_your_turn');
+  assert.equal(match.messages.length,history);
+  const late=send(match,host.id,'naber lan',deadline);
+  assert.equal(late.reason,'not_your_turn');
+  assert.equal(match.activePlayerId,guest.id);
+  assert.equal(send(match,guest.id,'naber lan',deadline+1).kind,'chat');
+  decisiveRound(match,host.id);
+  for(const player of [host,guest])assert.equal(send(match,player.id,'selam',match.roundEndedAt+1).reason,'not_playing');
+});
+
+test('a second-round countdown or intermission leave forfeits the entire series',()=>{
+  const match=running();decisiveRound(match,host.id);
+  const copy=JSON.parse(JSON.stringify(match));
+  leaveMatch(copy,host.id,copy.roundEndedAt+1);
+  assert.equal(copy.phase,'finished');
+  assert.equal(copy.winnerId,guest.id);
+  assert.deepEqual(copy.players.map(p=>p.roundWins),[1,2]);
+  const now=readyBoth(match);
+  assert.notEqual(match.startedAt,null);
+  leaveMatch(match,guest.id,now+1);
+  assert.equal(match.phase,'finished');
+  assert.equal(match.winnerId,host.id);
+  assert.deepEqual(match.players.map(p=>p.roundWins),[2,0]);
+});
+
+test('continued rounds preserve idempotency and never expose a future private chain',()=>{
+  const match=running();
+  const id='old-round-answer';
+  send(match,host.id,target(match),START+1,{messageId:id});
+  let now=START+1;
+  while(match.phase==='playing'){
+    now+=match.activePlayerId===host.id?1:20;
+    send(match,match.activePlayerId,target(match),now);
+  }
+  readyBoth(match);advanceTime(match,match.deadlineAt);
+  const before=JSON.stringify(match);
+  const result=send(match,host.id,'ZİLİ',match.roundStartedAt+1,{messageId:id});
+  assert.equal(result.duplicate,true);
+  assert.equal(JSON.stringify(match),before);
+  const view=publicMatch(match,match.roundStartedAt);
+  for(const key of ['currentChainId','usedChainIds','recentMessageIds'])assert.equal(key in view,false);
+  for(const cell of view.chain.slice(1))assert.deepEqual(Object.keys(cell).sort(),['first','length','status']);
+  view.continueReady.push(outsider.id);
+  assert.deepEqual(match.continueReady,[]);
+});
+
+test('legacy active rooms upgrade once while completed rooms are never revived',()=>{
+  const legacy=running();legacy.version=1;
+  for(const key of ['roundNumber','roundResult','continueReady','roundEndedAt','roundStartedAt','usedChainIds'])delete legacy[key];
+  for(const player of legacy.players)delete player.roundWins;
+  legacy.deadlineAt=START+20000;legacy.matchEndsAt=START+180000;
+  advanceTime(legacy,START+1);
+  assert.equal(legacy.version,2);
+  assert.equal(legacy.deadlineAt,START+30000);
+  assert.equal(legacy.matchEndsAt,START+240000);
+  advanceTime(legacy,START+2);
+  assert.equal(legacy.deadlineAt,START+30000);
+  const oldFinished={...legacy,version:1,phase:'finished',winnerId:host.id,finishedAt:START+10};
+  advanceTime(oldFinished,START+1000000);
+  assert.equal(oldFinished.phase,'finished');
+  assert.equal(oldFinished.winnerId,host.id);
 });

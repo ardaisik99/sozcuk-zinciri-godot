@@ -1,6 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
 import {fail} from './common.mjs';
-import {createMatch,joinMatch,startMatch,sendMessage,advanceTime,leaveMatch,publicMatch,nextAlarm} from './match.mjs';
+import {createMatch,joinMatch,startMatch,continueRound,sendMessage,advanceTime,leaveMatch,publicMatch,nextAlarm} from './match.mjs';
 import {pickChain,parseBank} from './chains.mjs';
 
 const GRACE=30000,WAIT_TTL=600000,HISTORY_TTL=86400000;
@@ -111,6 +111,11 @@ export class GameRoom extends DurableObject {
     ws.serializeAttachment(session);
     await this.advance();let result;
     if(message.type==='start')result=startMatch(this.match,session.id,now);
+    else if(message.type==='continue'){
+      const bank=parseBank(this.env.CHAIN_BANK);
+      const unseen=bank.filter(chain=>!(this.match.usedChainIds||[]).includes(chain.id));
+      result=continueRound(this.match,session.id,pickChain(Math.random,unseen.length?unseen:bank),now);
+    }
     else if(message.type==='chat')result=sendMessage(this.match,{playerId:session.id,text:message.text,messageId:message.messageId,turnId:message.turnId},now);
     else if(message.type==='leave'){
       result=leaveMatch(this.match,session.id,now);delete this.disconnected[session.id];

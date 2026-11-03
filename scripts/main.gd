@@ -305,7 +305,7 @@ func _show_home() -> void:
 	content.add_child(cards)
 	_mode_card(cards, "party", "Parti zamanı!", "Ekranı ortaya koy.\nZincirler açığa çıksın.", Color("ffe2c5"), "PARTİ MODU  →", func(): _show_party(true))
 	_mode_card(cards, "chef", "Bir kategori seç", "Mutfak, spor, doğa...\nKendi rotanı çiz.", Color("e3def0"), "KEŞFET  →", _show_levels)
-	_mode_card(cards, "lock", "Karşılıklı 1v1", "Oda koduyla kelime yarışı.\n20 saniyelik sıra ve sohbet.", Color("ece9e3"), "KELİME SAVAŞI  →", _show_online)
+	_mode_card(cards, "lock", "Karşılıklı 1v1", "Oda koduyla kelime yarışı.\n30 saniyelik sıra ve sohbet.", Color("ece9e3"), "KELİME SAVAŞI  →", _show_online)
 	var footer = U.row(8)
 	footer.add_child(U.icon("spark", 20))
 	footer.add_child(U.paragraph("Acele yok, süre yok. Sadece sen ve kelimeler.", 14, U.MUTED))

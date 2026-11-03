@@ -279,11 +279,18 @@ func reconnect() -> void:
 
 func send_chat(text: String) -> String:
 	if not room_snapshot_ready: _fail("not_ready"); return ""
+	if str(room_state.get("phase", "")) != "playing": _fail("not_playing"); return ""
+	if str(room_state.get("activePlayerId", "")) != str(profile.get("id", "")): _fail("not_your_turn"); return ""
 	text = text.strip_edges()
 	if text.is_empty() or text.length() > 160: _fail("invalid_message"); return ""
 	var id = new_message_id()
 	if not _send({"type": "chat", "text": text, "messageId": id, "turnId": int(room_state.get("turnId", 0))}): return ""
 	return id
+
+func send_continue() -> bool:
+	if not room_snapshot_ready: return _fail("not_ready")
+	if str(room_state.get("phase", "")) != "round_end": return _fail("not_playing")
+	return _send({"type": "continue"})
 
 func start_match() -> bool:
 	if not room_snapshot_ready: return _fail("not_ready")

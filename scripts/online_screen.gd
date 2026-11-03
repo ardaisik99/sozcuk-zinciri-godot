@@ -5,7 +5,6 @@ signal return_home
 
 const U = preload("res://scripts/ui.gd")
 const OnlineClient = preload("res://scripts/online_client.gd")
-const WordRow = preload("res://scripts/word_row.gd")
 var client
 var _client_override
 var _player_name = ""
@@ -45,6 +44,20 @@ var _leave_prompt: PanelContainer
 var _awaiting_first_snapshot = true
 var _booting = false
 var _retry_button: Button
+var _top_row: HBoxContainer
+var _waiting_root: VBoxContainer
+var _waiting_scoreboard: HBoxContainer
+var _battle_root: VBoxContainer
+var _chat_panel: PanelContainer
+var _messages_scroll: ScrollContainer
+var _question_label: Label
+var _correct_label: Label
+var _timer_bar: ProgressBar
+var _result_panel: PanelContainer
+var _result_text: Label
+var _continue_button: Button
+var _composer_row: HBoxContainer
+var _leave_button: Button
 
 class WrongGuessLabel extends Label:
 	func _draw() -> void:
@@ -61,6 +74,7 @@ func _ready() -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation", 18)
 	var top = U.row(10)
+	_top_row = top
 	top.add_child(U.icon_button("back", request_home))
 	var title = U.paragraph("Kelime Savaşı", 25, U.INK)
 	title.add_theme_font_override("font", U.heading_font())
@@ -243,113 +257,190 @@ func _update_lobby() -> void:
 func _build_room() -> void:
 	_clear_body("room")
 	_awaiting_first_snapshot = true
-	var info = _card(Color("fff0c9"))
+	# The existing waiting room keeps its controls and colors.
+	_waiting_root = U.column(18)
+	_body.add_child(_waiting_root)
+	var info_panel = U.panel(Color("fff0c9"), 20)
+	_waiting_root.add_child(info_panel)
+	var info = U.column(12)
+	info_panel.add_child(info)
 	info.add_child(_heading("ODA · " + client.room_code, 26))
 	var copy_button = U.button("ODA KODUNU KOPYALA", U.PAPER, func(): DisplayServer.clipboard_set(client.room_code), 43)
 	copy_button.add_theme_font_size_override("font_size", 16)
 	info.add_child(copy_button)
-	_phase_label = _heading("Rakibin bekleniyor…", 24)
-	info.add_child(_phase_label)
-	_clock_label = U.label("", 36, U.INK, true)
-	info.add_child(_clock_label)
-	_turn_label = U.paragraph("", 16, U.INK)
-	info.add_child(_turn_label)
-	_scoreboard = U.row(12)
-	_body.add_child(_scoreboard)
+	info.add_child(_heading("Rakibin bekleniyor…", 24))
+	info.add_child(U.paragraph("Kodunu paylaş. İkiniz hazır olduğunuzda ev sahibi yarışı başlatır.", 16, U.INK))
+	_waiting_scoreboard = U.row(12)
+	_waiting_root.add_child(_waiting_scoreboard)
 	_start_button = U.button("YARIŞI BAŞLAT", U.ORANGE, func(): client.start_match())
-	_body.add_child(_start_button)
+	_waiting_root.add_child(_start_button)
 	_room_invites = U.column(9)
-	_body.add_child(_room_invites)
-	_chain_list = U.column(9)
-	_body.add_child(_chain_list)
-	_body.add_child(U.paragraph("Sıran geldiğinde kelimeyi ekiyle yaz. 20 saniye içinde tekrar deneyebilirsin; doğru cevapta sıra değişir. Sohbet her zaman açık.", 15, U.MUTED))
-	_messages_list = U.column(9)
-	_body.add_child(_messages_list)
-	_composer_clue = U.paragraph("", 18, U.INK)
-	_body.add_child(_composer_clue)
-	_chat_input = _make_input("Mesaj veya kelime yaz…", 160)
+	_waiting_root.add_child(_room_invites)
+	_battle_root = U.column(12)
+	_body.add_child(_battle_root)
+	_scoreboard = U.row(12)
+	_battle_root.add_child(_scoreboard)
+	_result_panel = U.panel(U.MINT, 20)
+	_battle_root.add_child(_result_panel)
+	var result_column = U.column(12)
+	_result_panel.add_child(result_column)
+	_phase_label = _heading("Tur tamamlandı", 26)
+	_phase_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_column.add_child(_phase_label)
+	_result_text = U.paragraph("", 17, U.INK)
+	_result_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_column.add_child(_result_text)
+	_continue_button = U.button("DEVAM ET →", U.ORANGE, func(): client.send_continue())
+	_continue_button.name = "OnlineContinue"
+	result_column.add_child(_continue_button)
+	_chat_panel = U.panel(U.PAPER, 18)
+	var chat_style = U.box(U.PAPER, 18, U.LINE, 1)
+	chat_style.set_content_margin_all(12)
+	_chat_panel.add_theme_stylebox_override("panel", chat_style)
+	_battle_root.add_child(_chat_panel)
+	var chat_column = U.column(0)
+	_chat_panel.add_child(chat_column)
+	_chain_list = U.column(5)
+	chat_column.add_child(_chain_list)
+	var question_strip = U.panel(U.INK, 12)
+	var question_style = U.box(U.INK, 12)
+	question_style.content_margin_left = 12
+	question_style.content_margin_right = 12
+	question_style.content_margin_top = 12
+	question_style.content_margin_bottom = 12
+	question_strip.add_theme_stylebox_override("panel", question_style)
+	_chain_list.add_child(question_strip)
+	_question_label = U.paragraph("", 25, U.PAPER)
+	_question_label.name = "OnlineQuestionStrip"
+	_question_label.add_theme_font_override("font", U.heading_font())
+	_question_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	question_strip.add_child(_question_label)
+	_correct_label = U.paragraph("", 14, U.TEAL)
+	_correct_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_chain_list.add_child(_correct_label)
+	_messages_scroll = ScrollContainer.new()
+	_messages_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_messages_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chat_column.add_child(_messages_scroll)
+	_messages_list = U.column(13)
+	_messages_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_messages_scroll.add_child(_messages_list)
+	var turn_row = U.row(8)
+	chat_column.add_child(turn_row)
+	turn_row.add_child(U.icon("profile", 30))
+	_turn_label = U.paragraph("", 16, U.INK)
+	turn_row.add_child(_turn_label)
+	_clock_label = U.label("30", 25, U.INK, true)
+	turn_row.add_child(_clock_label)
+	_timer_bar = U.progress(100, U.TEAL, 8)
+	chat_column.add_child(_timer_bar)
+	_composer_clue = U.paragraph("", 14, U.MUTED)
+	_battle_root.add_child(_composer_clue)
+	_composer_row = U.row(8)
+	_battle_root.add_child(_composer_row)
+	_chat_input = _make_input("Cevabını yaz…", 160)
 	_chat_input.name = "OnlineChatInput"
 	_chat_input.text_submitted.connect(func(_text): _send_chat())
-	_body.add_child(_chat_input)
-	_send_button = U.button("GÖNDER", U.YELLOW, _send_chat, 52)
-	_body.add_child(_send_button)
-	_body.add_child(U.button("ODADAN AYRIL", U.CREAM, _leave_room, 45))
+	_chat_input.focus_entered.connect(_update_battle_layout)
+	_chat_input.focus_exited.connect(_update_battle_layout)
+	_composer_row.add_child(_chat_input)
+	_send_button = U.button("CEVAPLA", U.YELLOW, _send_chat, 52)
+	_send_button.add_theme_font_size_override("font_size", 17)
+	_composer_row.add_child(_send_button)
+	_leave_button = U.button("ODADAN AYRIL", U.CREAM, _leave_room, 45)
+	_body.add_child(_leave_button)
+
+func _score_card(person: Dictionary, active: bool, waiting: bool = false) -> PanelContainer:
+	var card = U.panel(U.MINT if active else U.PAPER, 16)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var column = U.column(4)
+	card.add_child(column)
+	if waiting:
+		column.add_child(_heading(str(person.get("name", "")), 18))
+		column.add_child(U.label(str(person.get("score", 0)), 28, U.INK, true))
+		column.add_child(U.paragraph("Bağlı" if person.get("connected", false) else "Bağlanıyor…", 12))
+		return card
+	var avatar = U.label(str(person.get("name", "?")).substr(0, 1).to_upper(), 24, U.INK, true)
+	avatar.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(avatar)
+	var shown_name = str(person.get("name", ""))
+	if shown_name.length() > 11: shown_name = shown_name.substr(0, 10) + "…"
+	var name_label = U.label(shown_name, 16, U.INK, true)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.custom_minimum_size.y = 22
+	name_label.clip_text = true
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(name_label)
+	var detail = "Bağlı" if person.get("connected", false) else "Bağlanıyor…"
+	if not waiting: detail = "%d puan" % int(person.get("score", 0))
+	var detail_label = U.paragraph(detail, 12)
+	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(detail_label)
+	return card
 
 func _update_room() -> void:
 	var snapshot: Dictionary = client.room_state
 	var players: Array = snapshot.get("players", [])
 	var phase = str(snapshot.get("phase", "waiting"))
+	var waiting = phase == "waiting"
+	_waiting_root.visible = waiting
+	_battle_root.visible = not waiting
+	_chat_panel.visible = phase in ["countdown", "playing"]
+	_composer_row.visible = phase in ["countdown", "playing"]
+	_composer_clue.visible = phase in ["countdown", "playing"]
+	_result_panel.visible = phase in ["round_end", "finished"]
+	_leave_button.text = "ARKADAŞLARA DÖN" if phase == "finished" else "ODADAN AYRIL"
 	var host = not players.is_empty() and str(players[0].get("id", "")) == str(client.profile.get("id", ""))
-	_start_button.visible = phase == "waiting" and host
+	_start_button.visible = waiting and host
 	_start_button.disabled = players.size() < 2 or client.status != "connected" or not client.room_snapshot_ready
-	_phase_label.text = {"waiting": "Rakibin bekleniyor…", "countdown": "Hazır mısın?", "playing": "Bağlantıyı bul!", "finished": "Maç tamam!"}.get(phase, "Bağlanıyor…")
-	if phase == "finished":
-		var winner = snapshot.get("winnerId")
-		_phase_label.text = "Berabere!" if winner == null or str(winner).is_empty() else "Kazandın!" if str(winner) == str(client.profile.get("id", "")) else "Rakibin kazandı!"
-	var score_key = JSON.stringify(players) + str(snapshot.get("activePlayerId", "")) + phase
+	var score_key = JSON.stringify(players) + str(snapshot.get("activePlayerId", "")) + phase + str(snapshot.get("roundNumber", 1))
 	if score_key != _score_signature:
 		_score_signature = score_key
-		for child in _scoreboard.get_children():
-			_scoreboard.remove_child(child)
-			child.queue_free()
+		for target in [_scoreboard, _waiting_scoreboard]:
+			for child in target.get_children(): target.remove_child(child); child.queue_free()
 		for person: Dictionary in players:
-			var card = U.panel(U.YELLOW if str(person.get("id", "")) == str(snapshot.get("activePlayerId", "")) and phase == "playing" else U.PAPER, 16)
-			card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			var column = U.column(4)
-			card.add_child(column)
-			column.add_child(_heading(str(person.get("name", "")), 18))
-			column.add_child(U.label(str(person.get("score", 0)), 28, U.INK, true))
-			column.add_child(U.paragraph("Bağlı" if person.get("connected", false) else "Bağlanıyor…", 12))
-			_scoreboard.add_child(card)
+			_waiting_scoreboard.add_child(_score_card(person, false, true))
+		if not players.is_empty(): _scoreboard.add_child(_score_card(players[0], str(players[0].id) == str(snapshot.get("activePlayerId", "")) and phase == "playing"))
+		var series = U.column(2)
+		series.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		var series_score = U.label("%d – %d" % [int(players[0].get("roundWins", 0)) if players.size() > 0 else 0, int(players[1].get("roundWins", 0)) if players.size() > 1 else 0], 30, U.INK, true)
+		series_score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		series.add_child(series_score)
+		var round_label = U.label("TUR %d / 3" % int(snapshot.get("roundNumber", 1)), 12, U.MUTED)
+		series.add_child(round_label)
+		_scoreboard.add_child(series)
+		if players.size() > 1: _scoreboard.add_child(_score_card(players[1], str(players[1].id) == str(snapshot.get("activePlayerId", "")) and phase == "playing"))
 	var invite_key = JSON.stringify(client.friends) + phase + str(players.size())
 	if invite_key != _invite_signature:
 		_invite_signature = invite_key
-		for child in _room_invites.get_children():
-			_room_invites.remove_child(child)
-			child.queue_free()
-		if phase == "waiting" and players.size() < 2:
+		for child in _room_invites.get_children(): _room_invites.remove_child(child); child.queue_free()
+		if waiting and players.size() < 2:
 			for person: Dictionary in client.friends:
 				_room_invites.add_child(U.paragraph(str(person.get("name", "")), 17, U.INK))
 				_room_invites.add_child(U.button("ODAYA DAVET ET", U.MINT, func(): _invite(str(person.get("id", ""))), 44))
-	var chain: Array = snapshot.get("chain", [])
-	var chain_key = JSON.stringify(chain) + str(snapshot.get("activeIndex", 1))
-	if chain_key != _chain_signature:
-		_chain_signature = chain_key
-		_render_chain(snapshot, chain)
+	_render_chain(snapshot, snapshot.get("chain", []))
 	_render_messages(snapshot.get("messages", []))
 	if client.room_snapshot_ready and _awaiting_first_snapshot:
 		_awaiting_first_snapshot = false
-		# If the socket dropped before delivery, keep the draft and allow retry.
 		_pending_message_id = ""
 		_pending_text = ""
-		_send_button.disabled = client.status != "connected"
+	_update_round_result(snapshot)
 	_update_clock()
+	_update_battle_layout()
 
 func _render_chain(snapshot: Dictionary, chain: Array) -> void:
-	for child in _chain_list.get_children():
-		_chain_list.remove_child(child)
-		child.queue_free()
+	var phase = str(snapshot.get("phase", "waiting"))
+	if phase == "countdown":
+		_question_label.text = "Hazır mısınız?"
+	else:
+		var index = int(snapshot.get("activeIndex", 1))
+		if index > 0 and index < chain.size():
+			var cell: Dictionary = chain[index]
+			_question_label.text = "%s → %s%s" % [str(chain[index - 1].get("stem", "")), str(cell.get("first", "")), "_".repeat(maxi(0, int(cell.get("length", 1)) - 1))]
+		else: _question_label.text = "Zincir tamamlandı"
 	var correct: Dictionary = snapshot.get("lastCorrect", {}) if snapshot.get("lastCorrect") is Dictionary else {}
-	var marker = "%s/%s" % [correct.get("turnId", ""), correct.get("at", "")]
-	var fresh = not correct.is_empty() and marker != _last_correct_marker and client.server_now_ms() - int(correct.get("at", 0)) < 2000
-	_last_correct_marker = marker
-	for i in chain.size():
-		var cell: Dictionary = chain[i]
-		var solved = str(cell.get("status", "hidden")) != "hidden"
-		var row = WordRow.new()
-		row.ordinal = i + 1
-		row.mode = "solved" if solved else "locked"
-		row.word = str(cell.get("stem", "")) if solved else str(cell.get("first", "?")) + "?".repeat(maxi(0, int(cell.get("length", 1)) - 1))
-		row.known = []
-		for p in row.word.length(): row.known.append(row.word[p] if solved or p == 0 else "")
-		_chain_list.add_child(row)
-		if not solved and i == int(snapshot.get("activeIndex", 1)):
-			row.add_theme_stylebox_override("panel", U.box(U.PAPER, 18, U.YELLOW, 3))
-			row.status_label.text = "SIRADAKİ KELİME · %d HARF" % row.word.length()
-		if str(cell.get("status", "")) == "skipped": row.status_label.text = "SÜRE DOLDU · AÇILDI"
-		if fresh and i == int(correct.get("index", -1)):
-			row.show_correct_answer(str(correct.get("answer", row.word)))
-			row.animate_to_stem(str(correct.get("stem", row.word)))
+	_correct_label.visible = not correct.is_empty() and client.server_now_ms() - int(correct.get("at", 0)) < 2200
+	_correct_label.text = "%s → %s" % [correct.get("answer", ""), correct.get("stem", "")] if not correct.is_empty() else ""
 
 func _render_messages(messages: Array) -> void:
 	var current = {}
@@ -362,61 +453,111 @@ func _render_messages(messages: Array) -> void:
 			_pending_text = ""
 		if _message_nodes.has(id): continue
 		var kind = str(message.get("kind", "chat"))
-		var panel = U.panel(U.MINT if kind == "correct" else Color("fff0c9") if kind == "system" else U.PAPER, 14)
-		var column = U.column(3)
-		panel.add_child(column)
-		column.add_child(U.paragraph(str(message.get("name", "Oyun")), 12, U.MUTED))
+		var mine = str(message.get("playerId", "")) == str(client.profile.get("id", ""))
+		var row = U.row(8)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if mine: row.add_child(U.expand())
+		var avatar = U.label(str(message.get("name", "?")).substr(0, 1), 18, U.TEAL, true)
+		row.add_child(avatar)
+		var column = U.column(2)
+		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(column)
+		column.add_child(U.paragraph(str(message.get("name", "Oyun")), 11, U.MUTED))
+		var message_row = U.row(6)
+		column.add_child(message_row)
 		var label: Label
 		if kind == "wrong":
 			label = WrongGuessLabel.new()
 			label.text = str(message.get("text", ""))
 			label.clip_text = true
+			label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			label.add_theme_font_override("font", U.body_font())
 			label.add_theme_font_size_override("font_size", 18)
 			label.add_theme_color_override("font_color", Color("bc5542"))
-		else:
-			label = U.paragraph(("✓ " if kind == "correct" else "") + str(message.get("text", "")), 18, U.INK)
-		column.add_child(label)
-		_messages_list.add_child(panel)
-		_message_nodes[id] = panel
+		else: label = U.paragraph(str(message.get("text", "")), 18, U.INK)
+		message_row.add_child(label)
+		if kind in ["correct", "wrong"]:
+			var mark = U.label("✓" if kind == "correct" else "×", 20, U.TEAL if kind == "correct" else Color("bc5542"), true)
+			message_row.add_child(mark)
+		if not mine: row.add_child(U.expand())
+		_messages_list.add_child(row)
+		_message_nodes[id] = row
 	for id in _message_nodes.keys():
 		if not current.has(id):
 			var node = _message_nodes[id]
 			_messages_list.remove_child(node)
 			node.queue_free()
 			_message_nodes.erase(id)
-	_send_button.disabled = not _pending_message_id.is_empty() or client.status != "connected" or not client.room_snapshot_ready
-	if _chat_input.has_focus(): _ensure_input_visible.call_deferred(_chat_input)
+	if not messages.is_empty(): _messages_scroll.set_deferred("scroll_vertical", int(_messages_scroll.get_v_scroll_bar().max_value))
+	_update_entry_lock()
+
+func _update_round_result(snapshot: Dictionary) -> void:
+	var phase = str(snapshot.get("phase", "waiting"))
+	if phase not in ["round_end", "finished"]: return
+	var result: Dictionary = snapshot.get("roundResult", {}) if snapshot.get("roundResult") is Dictionary else {}
+	var winner = result.get("winnerId") if phase == "round_end" else snapshot.get("winnerId")
+	var own = str(client.profile.get("id", ""))
+	var title = "Tur berabere!" if winner == null else "Turu kazandın!" if str(winner) == own else "Rakibin turu kazandı!"
+	if phase == "finished": title = "Maç berabere!" if winner == null else "Maçı kazandın!" if str(winner) == own else "Rakibin maçı kazandı!"
+	_phase_label.text = title
+	var players: Array = snapshot.get("players", [])
+	var tally = "%d – %d" % [int(players[0].get("roundWins", 0)) if players.size() > 0 else 0, int(players[1].get("roundWins", 0)) if players.size() > 1 else 0]
+	_result_text.text = "Seri skoru: %s. İki tur kazanan maçı kazanır." % tally
+	if phase == "round_end" and winner == null: _result_text.text += " Berabere tur yeniden oynanır."
+	if result.get("tieBreak", "") == "speed": _result_text.text += " Eşit puanda doğru cevap süresi belirleyici oldu."
+	_continue_button.visible = phase == "round_end"
+	var ready: Array = snapshot.get("continueReady", [])
+	var is_ready = ready.has(own)
+	_continue_button.disabled = is_ready or client.status != "connected"
+	_continue_button.text = "RAKİBİN BEKLENİYOR…" if is_ready else "DEVAM ET →"
+
+func _update_entry_lock() -> void:
+	var snapshot: Dictionary = client.room_state
+	var mine = str(snapshot.get("phase", "")) == "playing" and str(snapshot.get("activePlayerId", "")) == str(client.profile.get("id", ""))
+	var enabled = mine and client.status == "connected" and client.room_snapshot_ready
+	_chat_input.editable = enabled
+	_chat_input.placeholder_text = "Cevabını yaz…" if enabled else "Sıra rakibinde" if snapshot.get("phase", "") == "playing" else "Turun başlaması bekleniyor…"
+	_send_button.disabled = not enabled or not _pending_message_id.is_empty()
 
 func _process(delta: float) -> void:
 	_clock_tick += delta
 	if _mode == "room" and _clock_tick >= 0.2:
 		_clock_tick = 0
 		_update_clock()
+		_update_battle_layout()
 
 func _update_clock() -> void:
 	if _mode != "room" or not is_instance_valid(_clock_label): return
 	var snapshot: Dictionary = client.room_state
 	var phase = str(snapshot.get("phase", "waiting"))
 	var remaining = maxi(0, int(ceil(float(int(snapshot.get("deadlineAt", 0)) - client.server_now_ms()) / 1000)))
-	_clock_label.visible = phase in ["countdown", "playing"]
 	_clock_label.text = str(remaining) if phase == "countdown" else "%d sn" % remaining
-	if phase == "playing":
-		_turn_label.text = "SIRA SENDE · Cevabını veya mesajını yaz." if str(snapshot.get("activePlayerId", "")) == str(client.profile.get("id", "")) else "Sıra rakibinde. Sohbete devam edebilirsin."
-	elif phase == "waiting": _turn_label.text = "Kodunu paylaş. İkiniz hazır olduğunuzda ev sahibi yarışı başlatır."
-	elif phase == "countdown": _turn_label.text = "İlk kelime açık. Beş kelimelik zinciri birlikte tamamlayın."
-	elif snapshot.get("tieBreak", "") == "speed":
-		_turn_label.text = "Puanlar eşitti. Doğru cevapları toplamda daha kısa sürede bulan oyuncu kazandı."
-	else:
-		_turn_label.text = {"chain_complete": "Zincirdeki bütün bağlantılar tamamlandı.", "time_limit": "Maç süresi doldu. Sonucu puanlar belirledi.", "forfeit": "Bir oyuncu ayrıldığı için maç sona erdi.", "abandoned": "Maç sona erdi.", "room_closed": "Oda kapatıldı."}.get(str(snapshot.get("endReason", "")), "Yeni bir yarış için yeniden oda oluşturabilirsin.")
-	_composer_clue.text = ""
-	var index = int(snapshot.get("activeIndex", 0))
-	var chain: Array = snapshot.get("chain", [])
-	if phase == "playing" and index > 0 and index < chain.size():
-		var cell: Dictionary = chain[index]
-		var previous: Dictionary = chain[index - 1]
-		var mask = str(cell.get("first", "")) + "·".repeat(maxi(0, int(cell.get("length", 1)) - 1))
-		_composer_clue.text = "%d sn · %s + %s" % [remaining, str(previous.get("stem", "")), mask]
+	_timer_bar.value = minf(100, float(remaining) / (3 if phase == "countdown" else 30) * 100)
+	var mine = str(snapshot.get("activePlayerId", "")) == str(client.profile.get("id", ""))
+	var player_name = "Rakibin"
+	for person: Dictionary in snapshot.get("players", []):
+		if str(person.get("id", "")) == str(snapshot.get("activePlayerId", "")): player_name = str(person.get("name", "Rakibin"))
+	_turn_label.text = "Hazır olun!" if phase == "countdown" else "SIRA SENDE" if mine else player_name + " düşünüyor"
+	_composer_clue.text = "30 saniye · Tur %d / 3 · İlk 2 turu kazanan alır" % int(snapshot.get("roundNumber", 1))
+	if is_instance_valid(_correct_label) and _correct_label.visible:
+		var correct: Dictionary = snapshot.get("lastCorrect", {}) if snapshot.get("lastCorrect") is Dictionary else {}
+		if client.server_now_ms() - int(correct.get("at", 0)) > 2200: _correct_label.hide()
+	_update_entry_lock()
+
+func _update_battle_layout() -> void:
+	if _mode != "room" or not is_instance_valid(_messages_scroll): return
+	var phase = str(client.room_state.get("phase", "waiting"))
+	var keyboard = DisplayServer.virtual_keyboard_get_height() if DisplayServer.has_feature(DisplayServer.FEATURE_VIRTUAL_KEYBOARD) else 0
+	var compact = phase in ["countdown", "playing"] and (get_viewport_rect().size.y < 720 or keyboard > 0)
+	_top_row.visible = not compact
+	_connection_label.visible = not compact
+	_scoreboard.visible = not compact
+	_composer_clue.visible = phase in ["countdown", "playing"] and not compact
+	_leave_button.visible = not compact
+	_question_label.add_theme_font_size_override("font_size", 20 if compact else 25)
+	if compact: _correct_label.hide()
+	var available = get_viewport_rect().size.y - float(keyboard) - (235 if compact else 520)
+	_messages_scroll.custom_minimum_size.y = clampf(available, 60 if compact else 160, 490)
 
 func _send_chat() -> void:
 	if not _pending_message_id.is_empty() or not is_instance_valid(_chat_input) or not client.room_snapshot_ready: return
@@ -485,7 +626,7 @@ func request_home() -> void:
 	if is_instance_valid(_leave_prompt):
 		_close_leave_prompt()
 		return
-	if client == null or client.room_state.get("phase", "") not in ["countdown", "playing"]:
+	if client == null or client.room_state.get("phase", "") not in ["countdown", "playing", "round_end"]:
 		_back()
 		return
 	var focused = focus_control()
@@ -517,8 +658,8 @@ func _on_error(reason: String) -> void:
 	if reason == "not_configured": return
 	_pending_message_id = ""
 	_pending_text = ""
-	if is_instance_valid(_send_button): _send_button.disabled = client.status != "connected" or not client.room_snapshot_ready
-	var texts = {"invalid_name": "İsmin 2–18 karakter olmalı.", "invalid_code": "Arkadaş kodunu kontrol et.", "invalid_friend_code": "Arkadaş kodunu kontrol et.", "not_found": "Bu kodla bir oyuncu bulunamadı.", "user_not_found": "Bu kodla bir oyuncu bulunamadı.", "player_not_found": "Bu kodla bir oyuncu bulunamadı.", "self_request": "Kendi koduna arkadaşlık isteği gönderemezsin.", "cannot_add_self": "Kendi koduna arkadaşlık isteği gönderemezsin.", "room_not_found": "Bu oda bulunamadı veya süresi doldu.", "room_closed": "Bu oda kapatıldı. Yeni bir oda kodu iste.", "room_full": "Bu odada zaten iki oyuncu var.", "not_friends": "Önce arkadaşlık isteğinin kabul edilmesi gerekiyor.", "stale_turn": "Sıra değişti. Yazdığın mesaj duruyor; yeniden gönderebilirsin.", "rate_limited": "Biraz yavaşla; birkaç saniye sonra yeniden dene.", "invalid_message": "En fazla 160 karakterlik bir mesaj yaz.", "invalid_text": "En fazla 160 karakterlik bir mesaj yaz.", "host_only": "Yarışı yalnızca odayı açan oyuncu başlatabilir.", "need_two_players": "Rakibinin de odaya katılmasını bekle.", "player_disconnected": "Rakibin yeniden bağlanıyor. Biraz bekle.", "not_ready": "Odanın güncel bilgisi bekleniyor. Mesajın duruyor.", "session_replaced": "Bu hesap başka bir pencerede açıldı. Devam etmek için bağlantıyı yenileyebilirsin.", "connection_lost": "Bağlantı kesildi. Mesajın duruyor; bağlantı yenilenince gönderebilirsin.", "reconnect_expired": "Yeniden bağlanma süresi doldu. Bağlantıyı yenileyip maç sonucunu görebilirsin.", "unauthorized": "Oyuncu oturumu yenilenemedi. Yeniden bağlanmayı dene."}
+	if is_instance_valid(_send_button): _update_entry_lock()
+	var texts = {"not_your_turn": "Sıra rakibinde. Sıran geldiğinde yazabilirsin.", "not_playing": "Turun başlamasını bekle.", "invalid_name": "İsmin 2–18 karakter olmalı.", "invalid_code": "Arkadaş kodunu kontrol et.", "invalid_friend_code": "Arkadaş kodunu kontrol et.", "not_found": "Bu kodla bir oyuncu bulunamadı.", "user_not_found": "Bu kodla bir oyuncu bulunamadı.", "player_not_found": "Bu kodla bir oyuncu bulunamadı.", "self_request": "Kendi koduna arkadaşlık isteği gönderemezsin.", "cannot_add_self": "Kendi koduna arkadaşlık isteği gönderemezsin.", "room_not_found": "Bu oda bulunamadı veya süresi doldu.", "room_closed": "Bu oda kapatıldı. Yeni bir oda kodu iste.", "room_full": "Bu odada zaten iki oyuncu var.", "not_friends": "Önce arkadaşlık isteğinin kabul edilmesi gerekiyor.", "stale_turn": "Sıra değişti. Yazdığın mesaj duruyor; yeniden gönderebilirsin.", "rate_limited": "Biraz yavaşla; birkaç saniye sonra yeniden dene.", "invalid_message": "En fazla 160 karakterlik bir mesaj yaz.", "invalid_text": "En fazla 160 karakterlik bir mesaj yaz.", "host_only": "Yarışı yalnızca odayı açan oyuncu başlatabilir.", "need_two_players": "Rakibinin de odaya katılmasını bekle.", "player_disconnected": "Rakibin yeniden bağlanıyor. Biraz bekle.", "not_ready": "Odanın güncel bilgisi bekleniyor. Mesajın duruyor.", "session_replaced": "Bu hesap başka bir pencerede açıldı. Devam etmek için bağlantıyı yenileyebilirsin.", "connection_lost": "Bağlantı kesildi. Mesajın duruyor; bağlantı yenilenince gönderebilirsin.", "reconnect_expired": "Yeniden bağlanma süresi doldu. Bağlantıyı yenileyip maç sonucunu görebilirsin.", "unauthorized": "Oyuncu oturumu yenilenemedi. Yeniden bağlanmayı dene."}
 	_error_label.text = str(texts.get(reason, "Bağlantı kurulamadı. Biraz sonra yeniden dene."))
 	_error_label.show()
 

@@ -6,9 +6,9 @@ Cloudflare Workers ve SQLite Durable Objects üzerinde çalışan iki oyunculu K
 
 - Yalnız adla cihaz hesabı oluşturulur. Sunucu benzersiz arkadaş kodu verir. Kod hesap parolası değildir; cihazda saklanan rastgele anahtar hesap erişimini sağlar. Site/uygulama verisi silinirse bu hesaba erişim kaybolur.
 - Arkadaş isteği kabul edildikten sonra oda daveti gönderilebilir. Altı karakterli oda koduyla doğrudan katılmak da mümkündür.
-- İki oyuncu hazırken ev sahibi başlatır. Üç saniyelik geri sayım sonrası, sunucunun belirlediği oyuncunun 20 saniyelik sırası başlar.
-- Aktif oyuncunun tek kelimelik mesajı tahmindir. Yanlış cevap kırmızı çizilir; oyuncu kalan sürede tekrar deneyebilir. Çok kelimeli sohbet ve rakibin mesajları normal sohbet olarak gösterilir. Doğru çekimli cevap yeşil tik alır, 100 puan kazandırır, kelime köküne döner ve sıra rakibe geçer.
-- Süre biterse aynı kelimede sıra rakibe geçer. Aynı kelimede iki sıra da cevapsız kalırsa kelime açılır; puan verilmez. Beş kelimelik zincir bitince veya üç dakika dolunca karşılaşma sonuçlanır. Puanlar eşitse doğru cevaplara harcanan toplam süre kullanılır; o da eşitse beraberlik olur.
+- İki oyuncu hazırken ev sahibi başlatır. Üç saniyelik geri sayım sonrası, sunucunun belirlediği oyuncunun 30 saniyelik sırası başlar.
+- Aktif oyuncunun tek kelimelik mesajı tahmindir. Yanlış cevap kırmızı çizilir; oyuncu kalan sürede tekrar deneyebilir. Çok kelimeli sohbet ve aktif oyuncunun cümleleri normal sohbet olarak gösterilir; sırası gelmeyen oyuncu mesaj gönderemez. Doğru çekimli cevap yeşil tik alır, 100 puan kazandırır, kelime köküne döner ve sıra rakibe geçer.
+- Süre biterse aynı kelimede sıra rakibe geçer. Aynı kelimede iki sıra da cevapsız kalırsa kelime açılır; puan verilmez. Beş kelimelik zincir bitince veya dört dakika dolunca tur sonuçlanır. Tur puanları eşitse doğru cevaplara harcanan toplam süre kullanılır; o da eşitse tur yeni zincirle tekrarlanır. Tur sonunda iki oyuncunun Devam et onayı beklenir. İki tur kazanan, seriyi 2–0 veya 2–1 bitirir.
 - Bağlantı kesilmesinde 30 saniye dönüş süresi vardır. Başlamış maçtan açıkça ayrılmak rakibe galibiyet verir. Maç başlamadan oda kapanması istatistik yazmaz. Oda sohbeti 24 saat sonra temizlenir.
 
 ## Yerel test
