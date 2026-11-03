@@ -26,6 +26,7 @@ var party_level: Dictionary = {}
 var party_count = 0
 var resize_tick = 0.0
 var previous_size = Vector2.ZERO
+var online_view: Control
 var profile_input: LineEdit
 var transition_busy = false
 var transition_token = 0
@@ -71,7 +72,7 @@ func _process(delta: float) -> void:
 			previous_size = size
 			resize_tick = 0.0
 			var next_compact = size.x < 760
-			if next_compact != compact and screen in ["home", "levels", "party", "settings", "online"]:
+			if next_compact != compact and screen in ["home", "levels", "party", "settings"]:
 				_refresh_screen()
 			elif is_instance_valid(active_row) and screen == "game":
 				_scroll_active.call_deferred()
@@ -89,6 +90,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _go_back() -> void:
+	if screen == "online" and is_instance_valid(online_view):
+		online_view.request_home()
+		return
 	if screen == "game" and not state.tutorial_done:
 		_toast("Birlikte üç kelimeyi bulalım. Çok az kaldı!")
 	elif screen != "loading" and screen != "profile":
@@ -301,7 +305,7 @@ func _show_home() -> void:
 	content.add_child(cards)
 	_mode_card(cards, "party", "Parti zamanı!", "Ekranı ortaya koy.\nZincirler açığa çıksın.", Color("ffe2c5"), "PARTİ MODU  →", func(): _show_party(true))
 	_mode_card(cards, "chef", "Bir kategori seç", "Mutfak, spor, doğa...\nKendi rotanı çiz.", Color("e3def0"), "KEŞFET  →", _show_levels)
-	_mode_card(cards, "lock", "Karşılıklı 1v1", "Oda koduyla kelime yarışı.\nGelecek bir güncellemede.", Color("ece9e3"), "YAKINDA", _show_online)
+	_mode_card(cards, "lock", "Karşılıklı 1v1", "Oda koduyla kelime yarışı.\n20 saniyelik sıra ve sohbet.", Color("ece9e3"), "KELİME SAVAŞI  →", _show_online)
 	var footer = U.row(8)
 	footer.add_child(U.icon("spark", 20))
 	footer.add_child(U.paragraph("Acele yok, süre yok. Sadece sen ve kelimeler.", 14, U.MUTED))
@@ -645,14 +649,13 @@ func _show_party(new_chain: bool = true) -> void:
 	content.add_child(U.paragraph("Parti modunda altın harcanmaz, ilerlemen değişmez. Telefonu arkadaşlarınla paylaşman yeterli.", 14))
 
 func _show_online() -> void:
-	_clear("online", 540)
-	_topbar("Karşılıklı 1v1", true)
-	content.add_child(U.spacer(30))
-	content.add_child(U.icon("lock", 80))
-	content.add_child(U.badge("GELECEK GÜNCELLEMEDE", U.YELLOW))
-	content.add_child(_title("Dostça bir rekabet.", 36))
-	content.add_child(U.paragraph("Oda kodu, eş zamanlı başlangıç, canlı rakip skoru ve kısa mesajlar bu modun bir parçası olacak. Bu sürümde tek kişilik macera ve yüz yüze parti modu hazır.", 19, U.INK))
-	content.add_child(U.button("MACERAYA DÖN  →", U.ORANGE, _show_home))
+	_clear("online", 640)
+	online_view = load("res://scripts/online_screen.gd").new()
+	online_view.setup(state.profile_name)
+	content.add_child(online_view)
+	online_view.return_home.connect(_show_home)
+	keyboard_spacer = U.spacer(12)
+	content.add_child(keyboard_spacer)
 
 func _show_settings() -> void:
 	_clear("settings", 580)
@@ -669,7 +672,7 @@ func _show_settings() -> void:
 	content.add_child(U.button("ÖĞRETİCİYİ TEKRAR OYNA", U.YELLOW, _start_tutorial, 55))
 	content.add_child(U.paragraph("İlerleme bu cihazda otomatik kaydedilir. Web sürümünde aynı tarayıcı ve adresle devam edebilirsin. Gizli sekmede kayıt kalıcı olmayabilir.", 16))
 	var about = U.panel(U.PAPER, 18)
-	about.add_child(U.paragraph("NASIL OYNANIR?\n\nİlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, tamlamayı tamamlayan kelimeyi ekiyle yaz ve kontrol et. Örneğin ÇAY → KAŞIĞI; doğru cevap kısa bir animasyonla KAŞIK olur. Sonra KAŞIK → OYUNU ile devam edersin.\n\nHarf: 20 altın · Tanım ipucu: 15 altın\nYeni bölüm: +40 altın · +100 puan\n\nSözcük Zinciri · Türkçe · v1.4", 16, U.INK))
+	about.add_child(U.paragraph("NASIL OYNANIR?\n\nİlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, tamlamayı tamamlayan kelimeyi ekiyle yaz ve kontrol et. Örneğin ÇAY → KAŞIĞI; doğru cevap kısa bir animasyonla KAŞIK olur. Sonra KAŞIK → OYUNU ile devam edersin.\n\nHarf: 20 altın · Tanım ipucu: 15 altın\nYeni bölüm: +40 altın · +100 puan\n\nSözcük Zinciri · Türkçe · v1.5", 16, U.INK))
 	content.add_child(about)
 
 func _toast(message: String, success: bool = false) -> void:
@@ -719,7 +722,10 @@ func _update_keyboard() -> void:
 		_scroll_active.call_deferred()
 
 func _scroll_active() -> void:
-	if is_instance_valid(active_row) and is_instance_valid(scroll):
+	if screen == "online" and is_instance_valid(online_view) and is_instance_valid(scroll):
+		var target = online_view.focus_control()
+		if is_instance_valid(target): scroll.ensure_control_visible(target)
+	elif is_instance_valid(active_row) and is_instance_valid(scroll):
 		scroll.ensure_control_visible(active_group if is_instance_valid(active_group) and active_group.size.y < scroll.size.y else active_row)
 	elif is_instance_valid(profile_input) and screen == "profile" and is_instance_valid(scroll):
 		scroll.ensure_control_visible(profile_input)

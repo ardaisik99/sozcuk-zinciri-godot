@@ -1,6 +1,7 @@
 """Build the fast Pages edition. Only the Python standard library is needed."""
 import gzip
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -14,6 +15,11 @@ html = (ROOT / 'web/index.html').read_text(encoding='utf-8')
 css = (ROOT / 'web/style.css').read_text(encoding='utf-8')
 state = (ROOT / 'web/state.js').read_text(encoding='utf-8')
 game = (ROOT / 'web/game.js').read_text(encoding='utf-8')
+online = json.loads((ROOT / 'config/online.json').read_text(encoding='utf-8'))
+if os.environ.get('ZINCIR_ONLINE_URL'):
+    online['baseUrl'] = os.environ['ZINCIR_ONLINE_URL']
+html = html.replace('<script id="online-config" type="application/json">{"baseUrl":""}</script>',
+                    '<script id="online-config" type="application/json">' + json.dumps(online,ensure_ascii=False).replace('<','\\u003c') + '</script>')
 state = re.sub(r'^export default[^\n]*\n?', '', state, flags=re.MULTILINE)
 state = re.sub(r'^export\s+', '', state, flags=re.MULTILINE)
 game = re.sub(r'^import[^\n]*\n?', '', game, flags=re.MULTILINE)
@@ -25,6 +31,8 @@ html = html.replace('<script type="module" src="game.js"></script>', '<script id
 if 'src="game.js"' in html or 'href="style.css"' in html or 'export default ' in script:
     raise RuntimeError('Source entry points did not bundle correctly')
 (DEST / 'index.html').write_text(html, encoding='utf-8', newline='\n')
+for name in ['online.js', 'online.css']:
+    shutil.copy2(ROOT / 'web' / name, DEST / name)
 for name in ['.gdignore', '.nojekyll']:
     (DEST / name).touch()
 (DEST / 'data').mkdir(exist_ok=True)

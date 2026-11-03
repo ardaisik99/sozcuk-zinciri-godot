@@ -3,7 +3,9 @@ extends SceneTree
 const State = preload("res://scripts/game_state.gd")
 const MainScene = preload("res://scenes/main.tscn")
 const UI = preload("res://scripts/ui.gd")
+const OnlineClient = preload("res://scripts/online_client.gd")
 const TEST_PATH = "user://zincir_ui_test.json"
+const ONLINE_TEST_CONFIG = "user://zincir_ui_online_disabled.json"
 var checks = 0
 var failures = 0
 var app: Control
@@ -18,6 +20,7 @@ func check(condition: bool, description: String) -> void:
 		push_error(description)
 
 func clean_files() -> void:
+	if FileAccess.file_exists(ONLINE_TEST_CONFIG): DirAccess.remove_absolute(ProjectSettings.globalize_path(ONLINE_TEST_CONFIG))
 	for suffix in ["", ".tmp", ".bak"]:
 		var path = TEST_PATH + suffix
 		if FileAccess.file_exists(path):
@@ -83,6 +86,10 @@ func click_word_input() -> void:
 
 func _run() -> void:
 	clean_files()
+	var online_config = FileAccess.open(ONLINE_TEST_CONFIG, FileAccess.WRITE)
+	online_config.store_string(JSON.stringify({"baseUrl": ""}))
+	online_config.close()
+	OnlineClient.config_override_for_tests = ONLINE_TEST_CONFIG
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.content_scale_size = Vector2i.ZERO
 	root.size = Vector2i(390, 844)

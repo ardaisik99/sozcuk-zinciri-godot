@@ -9,7 +9,7 @@ const tag = (text, cls='') => `<span class="tag ${cls}">${text}</span>`;
 const mascot = (cls='', alt='Gazetesindeki kelime bulmacasını çözen mavi damla maskot') => `<img class="mascot ${cls}" data-pose="editorial" src="assets/mascot-editorial.webp" alt="${alt}" width="512" height="512" decoding="async">`;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let state, screen='loading', category='Tümü', partyLevel, partyCount=0, lastResult={}, toastTimer, audio;
-let transitioning=false, transitionToken=0;
+let transitioning=false, transitionToken=0, onlineScreen=null, onlineOpenToken=0;
 
 function toast(text, good=false) {
   clearTimeout(toastTimer); toastEl.textContent=text;
@@ -33,6 +33,8 @@ function bar(title='', back=false) {
   return `<header class="topbar">${back?`<button type="button" class="icon-btn" data-action="home" data-testid="back-home" aria-label="Ana menü">${icon('back')}</button>`:''}<div class="brand">${!back?mascot('brand-mascot',''):''}<span class="${back?'bar-title':''}">${title?esc(title):'SÖZCÜK<br>ZİNCİRİ'}</span></div><div class="coins" aria-label="${state.gold} altın">${icon('coin')}<span data-testid="gold">${state.gold}</span></div>${!back?`<button type="button" class="icon-btn" data-action="settings" aria-label="Oyuncu ve ayarlar">${icon('settings')}</button>`:''}</header>`;
 }
 function setScreen(name, html, cls='', keepScroll=false) {
+  if(onlineScreen){onlineScreen.destroy();onlineScreen=null;}
+  onlineOpenToken++;
 	transitionToken++;transitioning=false;
 	clearTimeout(toastTimer);toastEl.className='';
   screen=name;document.body.classList.remove('is-typing');
@@ -51,7 +53,7 @@ function profile() {
 }
 function home() {
   const next=nextLevel();
-  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Bir kelime, yeni bir bağlantı. Sıradakini birlikte bulalım!</p><div class="mini-chain"><div>${tag('ÇAY → K · · · · ·')}<p>Tamlamayı yaz.<br>Köküyle devam et.</p></div>${mascot('mini-mascot','')}</div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div>${mascot('home-mascot')}</section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','lock','Karşılıklı 1v1','Oda koduyla kelime yarışı. Gelecek bir güncellemede.','YAKINDA','online')}</div><div class="footnote">${icon('spark')}<span>Acele yok, süre yok. Sadece sen ve kelimeler.</span></div></div>`);
+  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Bir kelime, yeni bir bağlantı. Sıradakini birlikte bulalım!</p><div class="mini-chain"><div>${tag('ÇAY → K · · · · ·')}<p>Tamlamayı yaz.<br>Köküyle devam et.</p></div>${mascot('mini-mascot','')}</div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div>${mascot('home-mascot')}</section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','lock','Karşılıklı 1v1','20 saniyelik sıralar, canlı sohbet ve arkadaşların.','KELİME SAVAŞI →','online')}</div><div class="footnote">${icon('spark')}<span>Acele yok, süre yok. Sadece sen ve kelimeler.</span></div></div>`);
 }
 function modeCard(cls,ico,title,desc,label,action,attrs='') {
   return `<section class="mode-card panel ${cls}"><div class="row">${icon(ico)}<h3>${title}</h3></div><p>${desc}</p>${btn(label,action,'white small',attrs)}</section>`;
@@ -182,10 +184,25 @@ function party(newChain=true) {
   setScreen('party',`${bar('Parti zamanı!',true)}<div class="stack"><div class="row spread">${tag('HEP BİRLİKTE OYNAYIN')}<span class="small muted">Zincir ${String(partyCount).padStart(2,'0')}</span></div><h1>Kelimeler masada.</h1><p>Sırayla bir kelime söyleyin, bağlantısını açıklayın. Yeni bir tur için zincire dokunun.</p><section class="panel outlined party-chain" data-action="party-next"><span class="eyebrow">${esc(partyLevel.category.toLocaleUpperCase('tr-TR'))}</span>${partyLevel.words.map((w,i)=>`${btn(esc(w),'party-next','full')}${partyLevel.links[i]?`<p class="party-link">↓ ${esc(partyLevel.links[i])}</p>`:''}`).join('')}</section>${btn('YENİ ZİNCİR ↻','party-next','full','data-testid="party-next"')}<p class="muted small">Parti modunda altın harcanmaz, ilerlemen değişmez. Telefonu arkadaşlarınla paylaşman yeterli.</p></div>`,'narrow');
 }
 function settings() {
-  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Tamlamayı ekleriyle yaz: SU + BARDAĞI gibi. Cevap kısa bir animasyonla BARDAK olur; sıradaki bağlantıyı bu kökle kur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.4</span></section></div>`,'narrow');
+  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Tamlamayı ekleriyle yaz: SU + BARDAĞI gibi. Cevap kısa bir animasyonla BARDAK olur; sıradaki bağlantıyı bu kökle kur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.5</span></section></div>`,'narrow');
 }
-function online() {
-  setScreen('online',`${bar('Karşılıklı 1v1',true)}<div class="stack">${icon('lock')}${tag('GELECEK GÜNCELLEMEDE')}<h1>Dostça bir rekabet.</h1><p>Oda kodu, eş zamanlı başlangıç, canlı rakip skoru ve kısa mesajlar bu modun bir parçası olacak. Bu sürümde tek kişilik macera ve yüz yüze parti modu hazır.</p>${btn('MACERAYA DÖN →','home','full')}</div>`,'narrow');
+async function online() {
+  setScreen('online',`${bar('Kelime Savaşı',true)}<div class="stack"><h1>Rakibin hazır mı?</h1><p role="status">Oyun alanı hazırlanıyor…</p></div>`,'narrow');
+  const token=onlineOpenToken;
+  try {
+    // Load multiplayer only when requested: solo startup stays lightweight.
+    if(!document.querySelector('link[data-online-style]')){
+      const css=document.createElement('link');css.rel='stylesheet';css.href='online.css';css.dataset.onlineStyle='true';document.head.append(css);
+    }
+    const {OnlineScreen}=await import('./online.js');
+    if(token!==onlineOpenToken||screen!=='online')return;
+    let config={};try{config=JSON.parse(document.querySelector('#online-config')?.textContent||'{}');}catch{}
+    onlineScreen=new OnlineScreen({app,name:state.profileName,onHome:home,toast,sound,baseUrl:config.baseUrl||''});
+    await onlineScreen.open();
+  } catch(error){
+    if(token!==onlineOpenToken||screen!=='online')return;
+    console.error(error);setScreen('online',`${bar('Kelime Savaşı',true)}<div class="stack"><h1>Bağlantı kurulamadı.</h1><p>Bağlantını kontrol edip tekrar dene.</p>${btn('TEKRAR DENE','online','full')}</div>`,'narrow');
+  }
 }
 
 app.addEventListener('click',event=>{
@@ -214,7 +231,7 @@ app.addEventListener('submit',event=>{if(event.target.id!=='profile-form')return
 app.addEventListener('beforeinput',event=>{if(transitioning&&event.target.matches('.word-input'))event.preventDefault();});
 app.addEventListener('input',event=>{if(event.target.matches('.word-input')&&!event.isComposing&&!transitioning)paintInput();});
 app.addEventListener('compositionend',event=>{if(event.target.matches('.word-input'))paintInput();});
-app.addEventListener('keydown',event=>{if(event.target.matches('.word-input')&&event.key==='Enter'&&!event.isComposing){event.preventDefault();submit();}else if(event.key==='Escape'&&state.profileName&&(state.tutorialDone||screen!=='game'))home();});
+app.addEventListener('keydown',event=>{if(event.target.matches('.word-input')&&event.key==='Enter'&&!event.isComposing){event.preventDefault();submit();}else if(event.key==='Escape'&&screen!=='online'&&state.profileName&&(state.tutorialDone||screen!=='game'))home();});
 app.addEventListener('focusin',event=>{if(event.target.matches('input')){document.body.classList.add('is-typing');if(event.target.matches('.word-input'))requestAnimationFrame(scrollActive);}});
 app.addEventListener('focusout',()=>{setTimeout(()=>{if(!document.activeElement?.matches('input'))document.body.classList.remove('is-typing');},80);});
 function viewportChanged(){const vv=window.visualViewport;document.documentElement.style.setProperty('--vvh',`${vv?.height||innerHeight}px`);document.documentElement.style.setProperty('--keyboard-inset',`${Math.max(0,innerHeight-(vv?.height||innerHeight))}px`);if(document.activeElement?.matches('.word-input'))requestAnimationFrame(scrollActive);}

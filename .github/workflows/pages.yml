@@ -21,10 +21,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Web mantığı ve hızlı çıktı
         run: |
           node tools/test_web_state.mjs
+          node --test backend/tests/*.test.mjs
           python3 tools/build_web.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

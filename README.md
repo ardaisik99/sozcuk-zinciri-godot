@@ -4,7 +4,9 @@ Godot 4.7.2 ile hazırlanmış, Türkçe isim tamlamalarını bir zincirde birle
 
 [Oyunu tarayıcıda aç](https://ardaisik99.github.io/sozcuk-zinciri-godot/) · [GitHub kaynak deposu](https://github.com/ardaisik99/sozcuk-zinciri-godot)
 
-5 kategoride 40 bölüm, adla profil oluşturma, uygulamalı öğretici, kalıcı ilerleme, altın, harf/tanım jokerleri ve yüz yüze parti modu hazırdır. Karşılıklı 1v1 menüde gelecek mod olarak gösterilir.
+5 kategoride 40 bölüm, adla profil oluşturma, uygulamalı öğretici, kalıcı ilerleme, altın, harf/tanım jokerleri ve yüz yüze parti modu hazırdır. Kelime Savaşı modunda adla cihaz hesabı, arkadaş kodu ve istekleri, oda/davet, canlı sohbet ve sunucunun yönettiği 20 saniyelik sıralar bulunur.
+
+v1.5'te online Kelime Savaşı eklendi. Oyuncu yalnız adını kullanır; hesabı bu cihazda saklanır. Arkadaş isteği gönderip kabul edebilir, oda kodu veya davetle iki kişi oynayabilirsin. Beş kelimelik ortak zincirde tahmin ve sohbet aynı alana yazılır. Aktif oyuncunun yanlış tek kelimelik tahmini kırmızı çizilir; doğru çekimli kelimesi yeşil tik alıp 100 puan kazandırır ve sıra rakibe geçer. 20 saniye boyunca tekrar denemek serbesttir. İstemci yalnız açılmış cevapları alır; süre, puan ve doğrulama Cloudflare sunucusundadır. [Online kurulum ve testler](backend/README.md).
 
 v1.4'te önceki krem, mint, mercan ve altın renk düzenine dönüldü. Kullanıcının özgün mavi damla karakteri, elinde ince katlanmış gazete ve kelime bulmacasıyla yeniden çizildi. Giriş, profil, menü, rehber ve sonuç ekranları bu statik resmi paylaşır. Koşu animasyonu kaldırıldı. Web açılışında resmin indirilmesi ya da çözülmesi beklenmez; oyun verisi hazır olduğunda doğrudan devam edilir.
 
@@ -53,7 +55,7 @@ Hazır `docs/` çıktısını kullanarak derlemesiz yayınlamak istersen Pages S
 
 İlk kelime açıktır. Sıradaki kelimenin ilk harfi hazırdır; kutuya dokunarak telefonunun veya bilgisayarının kendi klavyesiyle kalan harfleri, tamlamanın ekiyle birlikte yaz. Örneğin ÇAY için KAŞIĞI yazılır; ilk K hazır olduğundan AŞIĞI girmen yeterlidir. Cevap KAŞIK biçimine dönüşür, ardından OYUNU yazılır. Harf jokeri 20, tanım jokeri 15 altındır; ilk tamamlamada 40 altın ve 100 puan kazanılır. Tekrar oynamak sınırsız ödül vermez.
 
-Profil, altın, puan ve ilerleme cihazda kaydedilir. Web'de tarayıcı/site verilerini temizlemek kaydı siler; özel modda kalıcı kayıt tarayıcıya bağlıdır. İnternet bağlantılı 1v1 henüz etkin değildir. Parti modu aynı cihaz etrafında yüz yüze oynanır.
+Profil, altın, puan ve ilerleme cihazda kaydedilir. Web'de tarayıcı/site verilerini temizlemek kaydı siler; özel modda kalıcı kayıt tarayıcıya bağlıdır. Online hesap ve arkadaşlar Cloudflare üzerinde saklanır; cihazdaki hesap anahtarını silmek o hesaba erişimi kaybettirir. Arkadaş kodu giriş anahtarı değildir. Online maç sonuçları tek kişilik altın/ilerlemeyi değiştirmez. Parti modu aynı cihaz etrafında yüz yüze oynanır.
 
 Godot ve hızlı web sürümünün cihaz kayıtları ayrıdır; birindeki ilerleme diğerine otomatik aktarılmaz.
 
@@ -67,10 +69,10 @@ Godot ve hızlı web sürümünün cihaz kayıtları ayrıdır; birindeki ilerle
 node tools/test_web_state.mjs
 ```
 
-v1.4 doğrulamasında Godot mantığı 789, Godot arayüzü 364, web mantığı 512 ve tarayıcı akışı 104 kontrolden geçti. Doğrulama; çekimli cevapları, köke dönüşümü, tüm bölümlerin harf sayısını, eski kayıt göçünü, dönüşüm sırasında art arda gönderim/joker engelini, ekrandan ayrılmayı, hareketi azaltmayı, mobil girişi ve dar/geniş ekran düzenlerini kapsar. Statik girişin bekleme eklememesi ve eski maskot/koşu dosyalarının yüklenmemesi de kontrol edilir. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
+Tek kişilik doğrulamasında Godot mantığı 789, Godot arayüzü 364, web mantığı 512 ve tarayıcı akışı 104 kontrolden geçti. Online sunucunun 33 birim/yaşam döngüsü testi ve canlı API entegrasyonunun 9 testi geçti. Godot online arayüzü ve canlı bağlantısı 75 kontrolden, canlı iki tarayıcılı oyun akışı 41 kontrolden geçti. Doğrulama; çekimli cevapları, köke dönüşümü, tüm bölümlerin harf sayısını, eski kayıt göçünü, dönüşüm sırasında art arda gönderim/joker engelini, ekrandan ayrılmayı, hareketi azaltmayı, mobil girişi ve dar/geniş ekran düzenlerini kapsar. Statik girişin bekleme eklememesi ve eski maskot/koşu dosyalarının yüklenmemesi de kontrol edilir. Gerçek Android/iOS cihaz klavyeleri ayrıca cihazda denenmelidir.
 
-Godot sürümü Compatibility renderer kullanır. Hızlı web sürümü yerel WebP/WOFF2 dosyaları ve küçük SVG simgeler kullanır. Android/iOS imzalama veya mağaza paketleri bu teslimata dahil değildir; mobil tarayıcı sürümü doğrudan test edilebilir.
+Godot sürümü Compatibility renderer kullanır. Hızlı web sürümü yerel WebP/WOFF2 dosyaları ve küçük SVG simgeler kullanır. Online mod ayrı bir WebSocket bağlantısını yalnız açıldığında kurar. Android/iOS imzalama veya mağaza paketleri bu teslimata dahil değildir; mobil tarayıcı sürümü doğrudan test edilebilir.
 
-Hızlı web HTML dosyası yaklaşık 70 KB (gzip yaklaşık 22 KB), kopyalanan görsel ve fontların tamamı yaklaşık 138 KB'dır. Gazeteli maskot 30 KB WebP'dir; aynı dosya bütün ekranlarda paylaşılır. Eski pozlar ve koşu atlası web çıktısına kopyalanmaz, Godot dışa aktarımına dahil edilmez. Yüksek çözünürlüklü ana çizimler de Godot oyun paketinin dışındadır. HTML içindeki oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Cevap efektleri kısa süre çalışır; sürekli animasyon, parçacık veya video yoktur. Godot'un hareketsiz ekranlarında düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
+Hızlı web HTML dosyası yaklaşık 70 KB (gzip yaklaşık 22 KB), kopyalanan görsel ve fontların tamamı yaklaşık 138 KB'dır. Gazeteli maskot 30 KB WebP'dir; aynı dosya bütün ekranlarda paylaşılır. Eski pozlar ve koşu atlası web çıktısına kopyalanmaz, Godot dışa aktarımına dahil edilmez. Yüksek çözünürlüklü ana çizimler de Godot oyun paketinin dışındadır. HTML içindeki tek kişilik oyun kodu ve bölüm verileri ek motor indirmesi beklemeden çalışır. Online JS/CSS yalnız bu mod açıldığında indirilir. Sunucuya her saniye istek gönderilmez; sayaç yerelde çizilir, son kararı sunucu verir. Cevap efektleri kısa süre çalışır; sürekli animasyon, parçacık veya video yoktur. Godot'un hareketsiz ekranlarında düşük işlemci kullanımı etkinleşir. Görsel üretim istemi, yerel dosyalar ve font lisansları [assets/README.md](assets/README.md) içinde belgelenmiştir.
 
 Godot: [resmi indirme](https://godotengine.org/download/windows/), [web dışa aktarma belgesi](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_web.html).

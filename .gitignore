@@ -9,3 +9,9 @@ output/
 node_modules/
 __pycache__/
 docs/*.import
+.wrangler/
+.dev.vars
+.env
+.env.local
+backend/private/
+services/online-gateway/
