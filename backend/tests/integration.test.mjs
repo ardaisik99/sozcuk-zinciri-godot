@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { DEMO_CHAINS, parseBank } from '../src/chains.mjs';
+import { DEMO_CHAINS, parseBank,flattenBank } from '../src/chains.mjs';
 
 const configured = process.env.ONLINE_API_URL;
 const base = configured?.replace(/\/$/u, '');
@@ -122,7 +122,7 @@ function chat(client, player, text, extra = {}) {
 }
 
 function hiddenProjection(state) {
-  assert.equal(state.chain.length, 5);
+  assert.ok(state.chain.length >= 7);
   assert.equal('token' in state, false);
   assert.equal('recentMessageIds' in state, false);
   assert.equal('answers' in state, false);
@@ -141,7 +141,7 @@ async function configuredBank() {
 
 test('real Durable Objects: device accounts, social graph and authoritative two-player WebSockets', { skip: !configured, timeout: local ? 55_000 : 180_000 }, async t => {
   suiteSignal = t.signal;
-  const bank = await configuredBank();
+  const bank = flattenBank(await configuredBank());
   const stage = async (name, run) => {
     let failed = false;
     await t.test(name, async () => {
@@ -247,14 +247,18 @@ test('real Durable Objects: device accounts, social graph and authoritative two-
 
     await stage('active-only chat, red wrong guesses, checked correct answer and race guards are authoritative', async () => {
       const initial = hostSocket.state;
-      const eligible = bank.filter(chain => chain.words[0] === initial.chain[0].stem && chain.answers.every((answer, index) => index === 0 || answer[0] === initial.chain[index].first && answer.length === initial.chain[index].length));
-      assert.equal(eligible.length, 1, 'The configured private test bank should identify the server-selected chain.');
-      const chain = eligible[0];
       const activeHost = initial.activePlayerId === host.profile.id;
       const active = activeHost ? hostSocket : guestSocket;
       const inactive = activeHost ? guestSocket : hostSocket;
       firstScorer = activeHost ? host : guest;
       winner = activeHost ? guest : host;
+      let eligible=bank.filter(q=>q.prompt===initial.question.prompt&&q.answer[0]===initial.question.first&&q.answer.length===initial.question.length);
+      if(eligible.length>1){
+        const before=active.mark();active.send({type:'joker',kind:'hint',requestId:randomUUID(),turnId:active.state.turnId});
+        const revealed=await active.waitState(s=>!!s.question?.hint,before);eligible=eligible.filter(q=>q.hint===revealed.question.hint);
+      }
+      assert.equal(eligible.length,1,'The private fixture should identify the selected question after a paid hint if needed.');
+      const target=eligible[0],chain={words:[target.prompt,target.stem],answers:[target.prompt,target.answer,'BUGÜN']};
       const deadline = initial.deadlineAt;
       const turn = initial.turnId;
       let mark = active.mark();
@@ -274,7 +278,7 @@ test('real Durable Objects: device accounts, social graph and authoritative two-
       mark = active.mark();
       const correctCommand = chat(active, firstScorer, chain.answers[1].toLocaleLowerCase('tr-TR'));
       const solved = await active.waitState(state => state.activeIndex === 2 && state.messages.some(message => message.kind === 'correct'), mark);
-      assert.equal(solved.messages.at(-1).clientMessageId, correctCommand.messageId);
+      assert.equal(solved.messages.find(m=>m.clientMessageId===correctCommand.messageId)?.kind, 'correct');
       assert.equal(solved.players.find(player => player.id === firstScorer.profile.id).score, 100);
       assert.equal(solved.players.find(player => player.id === firstScorer.profile.id).responseMs >= 0, true);
       assert.equal(solved.activePlayerId, winner.profile.id);

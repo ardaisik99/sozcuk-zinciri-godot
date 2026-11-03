@@ -12,6 +12,12 @@ static var config_override_for_tests = ""
 var account_path = "user://online_account.json"
 var base_url = ""
 var profile: Dictionary = {}
+var avatar = "mascot-boy"
+var matchmaking: Dictionary = {}
+var history: Array = []
+var shop: Dictionary = {}
+var _queue_poll_at = 0
+var _queue_fetching = false
 var friends: Array = []
 var incoming: Array = []
 var outgoing: Array = []
@@ -69,7 +75,7 @@ func start(player_name: String, config_path: String = DEFAULT_CONFIG) -> bool:
 			_fail(str(me.get("reason", "network")))
 			return false
 	if _token.is_empty():
-		var registration: Dictionary = await _request("/v1/register", HTTPClient.METHOD_POST, {"name": player_name}, false)
+		var registration: Dictionary = await _request("/v1/register", HTTPClient.METHOD_POST, {"name": player_name, "avatar": avatar}, false)
 		if not registration.get("ok", false) or not registration.get("profile") is Dictionary or str(registration.get("token", "")).is_empty():
 			_fail(str(registration.get("reason", "network")))
 			return false
@@ -125,8 +131,9 @@ func refresh_friends() -> bool:
 	social_refreshed.emit(true)
 	return true
 
-func rename_profile(player_name: String) -> bool:
-	var result: Dictionary = await _request("/v1/profile", HTTPClient.METHOD_POST, {"name": player_name})
+func rename_profile(player_name: String, chosen_avatar: String = "") -> bool:
+	if not chosen_avatar.is_empty(): avatar = chosen_avatar
+	var result: Dictionary = await _request("/v1/profile", HTTPClient.METHOD_POST, {"name": player_name, "avatar": avatar})
 	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
 	if result.get("profile") is Dictionary: profile = result.profile.duplicate(true)
 	save_account()
@@ -167,6 +174,72 @@ func invite_friend(user_id: String) -> bool:
 	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
 	return true
 
+func refresh_history() -> bool:
+	var result: Dictionary = await _request("/v1/history", HTTPClient.METHOD_GET)
+	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
+	history = result.get("history", []).duplicate(true) if result.get("history") is Array else []
+	changed.emit()
+	return true
+
+func refresh_shop() -> bool:
+	var result: Dictionary = await _request("/v1/shop", HTTPClient.METHOD_GET)
+	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
+	shop = result.duplicate(true)
+	for key in ["gold", "inventory", "removeAds"]:
+		if result.has(key): profile[key] = result[key]
+	save_account()
+	changed.emit()
+	return true
+
+func buy_product(product_id: String) -> bool:
+	var result: Dictionary = await _request("/v1/shop/buy", HTTPClient.METHOD_POST, {"productId": product_id, "requestId": new_message_id()})
+	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
+	await _refresh_profile()
+	await refresh_shop()
+	return true
+
+func verify_google_purchase(product_id: String, purchase_token: String) -> Dictionary:
+	var result: Dictionary = await _request("/v1/purchases/google", HTTPClient.METHOD_POST, {"productId": product_id, "purchaseToken": purchase_token})
+	if result.get("ok", false) and result.get("profile") is Dictionary:
+		profile = result.profile.duplicate(true)
+		save_account()
+		changed.emit()
+	return result
+
+func join_matchmaking() -> bool:
+	var result: Dictionary = await _request("/v1/matchmaking/join", HTTPClient.METHOD_POST)
+	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
+	_accept_matchmaking(result)
+	_queue_poll_at = Time.get_ticks_msec() + 2000
+	set_process(true)
+	return true
+
+func cancel_matchmaking() -> bool:
+	var result: Dictionary = await _request("/v1/matchmaking/cancel", HTTPClient.METHOD_POST)
+	if not result.get("ok", false): return _fail(str(result.get("reason", "network")))
+	matchmaking = {"status": "idle"}
+	changed.emit()
+	return true
+
+func _poll_matchmaking() -> void:
+	_queue_fetching = true
+	var result: Dictionary = await _request("/v1/matchmaking", HTTPClient.METHOD_GET)
+	_queue_fetching = false
+	if result.get("ok", false): _accept_matchmaking(result)
+
+func _accept_matchmaking(result: Dictionary) -> void:
+	matchmaking = result.duplicate(true)
+	if str(result.get("status", "")) == "matched" and not str(result.get("roomCode", "")).is_empty():
+		connect_room(str(result.roomCode))
+	changed.emit()
+
+func send_joker(kind: String) -> bool:
+	if not room_snapshot_ready: return _fail("not_ready")
+	if str(room_state.get("phase", "")) != "playing": return _fail("not_playing")
+	if str(room_state.get("activePlayerId", "")) != str(profile.get("id", "")): return _fail("not_your_turn")
+	if kind not in ["hint", "letter"]: return _fail("invalid_joker")
+	return _send({"type": "joker", "kind": kind, "turnId": int(room_state.get("turnId", 0)), "requestId": new_message_id()})
+
 func connect_room(code: String) -> void:
 	var next_code = code.strip_edges().to_upper().substr(0, 6)
 	if next_code != room_code: room_state.clear()
@@ -198,6 +271,9 @@ func _open_socket(kind: String) -> void:
 
 func _process(_delta: float) -> void:
 	if not _active: return
+	if matchmaking.get("status", "") == "waiting" and Time.get_ticks_msec() >= _queue_poll_at and not _queue_fetching:
+		_queue_poll_at = Time.get_ticks_msec() + 2000
+		_poll_matchmaking()
 	if _reconnect_deadline > 0 and Time.get_ticks_msec() >= _reconnect_deadline and status != "connected":
 		_close_socket()
 		_reconnect_deadline = 0
@@ -238,6 +314,10 @@ func receive_packet(packet: Dictionary) -> void:
 		"state":
 			if not packet.get("state") is Dictionary: return
 			room_state = packet.state.duplicate(true)
+			for person: Dictionary in room_state.get("players", []):
+				if str(person.get("id", "")) == str(profile.get("id", "")):
+					for key in ["gold", "inventory", "avatar"]:
+						if person.has(key): profile[key] = person[key]
 			room_snapshot_ready = true
 			server_offset_ms = int(room_state.get("serverNow", local_now_ms())) - local_now_ms()
 			save_account()
@@ -248,6 +328,8 @@ func receive_packet(packet: Dictionary) -> void:
 				_refresh_profile()
 		"ready", "social":
 			refresh_friends()
+		"matchmaking":
+			_accept_matchmaking(packet)
 		"error":
 			_fail(str(packet.get("reason", "network")))
 
@@ -297,6 +379,7 @@ func start_match() -> bool:
 	return _send({"type": "start"})
 
 func leave_room() -> void:
+	matchmaking.clear()
 	if not room_code.is_empty():
 		_send({"type": "leave"})
 		if _socket != null: _socket.poll()

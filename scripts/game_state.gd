@@ -12,6 +12,7 @@ const SAVE_PATH := "user://zincir_save.json"
 const CONTENT_PATH := "res://data/levels.json"
 
 var profile_name: String = ""
+var profile_avatar: String = "mascot-boy"
 var gold: int = START_GOLD
 var score: int = 0
 var completed: Array[String] = []
@@ -245,7 +246,7 @@ func _store_current() -> void:
 
 func save_game() -> bool:
 	_store_current()
-	var payload := {"version": 1, "profile_name": profile_name, "gold": gold, "score": score, "completed": completed, "tutorial_done": tutorial_done, "settings": settings, "progress": progress}
+	var payload := {"version": 1, "profile_name": profile_name, "profile_avatar": profile_avatar, "gold": gold, "score": score, "completed": completed, "tutorial_done": tutorial_done, "settings": settings, "progress": progress}
 	var tmp := save_path + ".tmp"
 	var file := FileAccess.open(tmp, FileAccess.WRITE)
 	if file == null:
@@ -280,6 +281,8 @@ func load_save() -> bool:
 	revealed = {}
 	hint_used = {}
 	profile_name = str(data.get("profile_name", "")).left(18).strip_edges()
+	profile_avatar = str(data.get("profile_avatar", "mascot-boy"))
+	if profile_avatar not in ["mascot-boy", "mascot-girl"]: profile_avatar = "mascot-boy"
 	gold = clampi(_safe_int(data.get("gold", START_GOLD), START_GOLD), 0, 99999999)
 	score = clampi(_safe_int(data.get("score", 0), 0), 0, 99999999)
 	tutorial_done = bool(data.get("tutorial_done", false))
@@ -353,6 +356,7 @@ func _safe_int(value: Variant, fallback: int) -> int:
 
 func reset_progress() -> void:
 	profile_name = ""
+	profile_avatar = "mascot-boy"
 	gold = START_GOLD
 	score = 0
 	completed.clear()

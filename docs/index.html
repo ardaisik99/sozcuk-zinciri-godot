@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#fff8ee">
   <meta name="description" content="Kelimeleri bağla, zinciri tamamla. Türkçe kelime bulmacası ve arkadaşlarınla parti modu.">
   <title>Sözcük Zinciri</title>
-  <link rel="icon" href="assets/mascot-editorial-icon.png" type="image/png">
-  <link rel="preload" as="image" href="assets/mascot-editorial.webp">
+  <link rel="icon" href="assets/app-logo-icon.png" type="image/png">
+  <link rel="preload" as="image" href="assets/app-logo.webp">
   <style>
 @font-face{font-family:Baloo;src:url('assets/fonts/Baloo2.woff2') format('woff2');font-weight:800;font-display:swap}
 @font-face{font-family:Nunito;src:url('assets/fonts/Nunito.woff2') format('woff2');font-weight:800;font-display:swap}
@@ -18,15 +18,17 @@
 @media(max-width:359px){main{width:calc(100% - 28px)}.topbar{gap:8px}.brand{font-size:18px;gap:8px}.brand .icon{width:30px;height:30px}.coins{font-size:18px;padding:8px}.hero h1{font-size:30px}.hero .tag{font-size:11px}.hero p{font-size:14px}.mini-chain .hero-art{width:94px;height:71px}.mini-chain .tag{font-size:11px}.btn{font-size:18px}.word-row{padding:13px}.joker-row{gap:9px}.joker-row .btn{font-size:15px}.joker-row .icon{width:20px;height:20px}.rewards{font-size:22px}.bar-title{font-size:20px}}
 .mascot{display:block;object-fit:contain;flex:none;aspect-ratio:1}.brand .brand-mascot{width:43px;height:49px}.profile .profile-mascot{width:170px;height:170px;margin:0 auto}.boot-mascot{width:144px;height:144px}.home-mascot{width:min(100%,320px);height:auto;justify-self:center;filter:drop-shadow(0 8px 0 #29364f12)}.mini-mascot{width:116px;height:116px}.win-mascot{width:124px;height:124px;margin:0 auto}.mascot-tip{display:flex;align-items:center;gap:12px;padding:12px 15px}.tip-mascot{width:60px;height:67px}.mascot-tip p{font-size:15px;line-height:1.45}.word-row[data-mode=revealing],.word-row[data-mode=morphing]{border:2px solid #279f8c;background:#e1f1e9;box-shadow:0 4px 0 #279f8c}.word-row[data-mode=revealing] .word-meta,.word-row[data-mode=morphing] .word-meta{color:#218a79}.word-row[data-mode=revealing] .word-tile,.word-row[data-mode=morphing] .word-tile{color:var(--ink);background:#c4e4d6}.word-row[data-mode=revealing] .word-input,.word-row[data-mode=morphing] .word-input{pointer-events:none}.word-correct{animation:word-success .25s ease-out}.letter-leaving{animation:letter-out .2s ease-in forwards}.letter-changing{animation:letter-turn .2s ease-in forwards}.word-settled{animation:word-settle .24s ease-out}.morph-feedback{color:#248f7e;text-align:center;font-family:Baloo,Symbols,system-ui,sans-serif;font-size:21px;line-height:1.3}.morph-feedback>span[aria-hidden]{display:inline-block;margin:0 9px;color:#e99b35}.morph-caption{display:block;font-family:Nunito,system-ui,sans-serif;font-size:13px;color:var(--muted);margin-top:4px}main[data-transitioning=true] .active-group>.btn:disabled,main[data-transitioning=true] .joker-row>.btn:disabled{opacity:.7}main[data-screen=game]:not([data-transitioning]) .word-row[data-mode=active]{animation:active-arrive .18s ease-out}@keyframes word-success{50%{transform:scale(1.015)}}@keyframes letter-out{to{transform:translateY(-9px) scale(.8);opacity:0}}@keyframes letter-turn{to{transform:scale(.75);opacity:.25}}@keyframes word-settle{50%{transform:translateY(-2px)}}@keyframes active-arrive{from{opacity:.55;transform:translateY(5px)}to{opacity:1;transform:none}}@media(max-width:759px){.hero>.home-mascot{display:none}.profile .profile-mascot{width:150px;height:150px}.mini-chain{margin-bottom:14px}.win-mascot{width:110px;height:110px}}@media(max-width:359px){.brand .brand-mascot{width:34px;height:41px}.mini-mascot{width:94px;height:100px}.tip-mascot{width:46px;height:60px}.mascot-tip{gap:9px;padding:11px}.mascot-tip p{font-size:14px}.morph-feedback{font-size:18px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
-/* Editorial mascot: one static illustration, shared by every screen. */
+/* Shared illustrations stay static and are decoded only when needed. */
 .boot{min-height:100svh;gap:17px}.boot-mascot{width:210px;height:210px}.boot .tag{background:var(--mint)}.boot h1{font-size:42px}.boot p{color:var(--muted);font-size:15px}.brand .brand-mascot{width:47px;height:49px}.home-mascot{max-width:340px;filter:none}.profile .profile-mascot{width:200px;height:200px}.mini-mascot{width:132px;height:132px}.win-mascot{width:160px;height:160px}.tip-mascot{width:72px;height:72px}.play-tip{background:#f4f8f3}.play-tip p{color:var(--ink)}
 @media(max-width:759px){.profile .profile-mascot{width:180px;height:180px}.win-mascot{width:140px;height:140px}}
 @media(max-width:359px){.mini-mascot{width:105px;height:105px}.tip-mascot{width:54px;height:60px}.brand .brand-mascot{width:36px;height:41px}}
+.home-profile{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:0;border:0;background:transparent;text-align:left;color:var(--ink)}.profile-avatar{width:68px;height:68px;object-fit:contain;background:#e1f1e9;border-radius:19px;border:2px solid var(--ink);padding:3px;flex:none}.home-profile .profile-avatar{width:49px;height:49px;border-radius:14px}.home-profile>span{display:grid;min-width:0;gap:4px}.home-profile small{font-size:9px;letter-spacing:.08em;color:var(--muted)}.home-profile strong{font:800 22px/1 Baloo,system-ui,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.profile-logo{width:170px;height:170px;object-fit:contain;margin:0 auto;border-radius:34px}.avatar-picker{border:0;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-width:0}.avatar-picker legend{font-size:14px;margin-bottom:12px;color:var(--muted)}.avatar-choice{display:grid;gap:7px;place-items:center;border:2px solid var(--line);border-radius:18px;background:white;color:var(--ink);padding:12px;font-size:13px}.avatar-choice .profile-avatar{width:85px;height:85px;border:0;background:transparent;padding:0}.avatar-choice.selected{border-color:var(--teal);background:#edf7f1;box-shadow:0 3px 0 var(--teal)}.home-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.home-shortcuts .btn{font-size:17px;padding:12px 9px}.home-shortcuts .icon{width:22px;height:22px}.settings-card{display:grid;gap:22px}.teacher-speech{position:relative;display:grid;gap:7px}.teacher-speech .eyebrow{font-size:10px;color:#9d772d}.tutorial-tip{padding:17px;border:2px solid #e4c46e;box-shadow:0 3px 0 #e4c46e}.tutorial-tip .tip-mascot{width:90px;height:110px}.tutorial-tip p{font-size:16px}.mode-card.online{background:#d9eee7}
+@media(max-width:480px){.home-shortcuts{gap:8px}.home-shortcuts .btn{font-size:13px;flex-direction:column;gap:5px;min-height:70px}.home-profile strong{font-size:20px}.topbar .coins{font-size:18px;padding:9px}.tutorial-tip .tip-mascot{width:67px;height:95px}.tutorial-tip{gap:9px;padding:12px}.tutorial-tip p{font-size:14px}.profile-logo{width:145px;height:145px}.profile .stack{gap:15px}.avatar-choice .profile-avatar{width:75px;height:75px}}
 
 </style>
 </head>
 <body>
-  <div id="app"><main class="boot" data-screen="loading" aria-labelledby="boot-title"><img class="mascot boot-mascot" src="assets/mascot-editorial.webp" alt="Gazetesindeki kelime bulmacasını çözen mavi damla maskot" width="512" height="512" decoding="async"><span class="tag">HER KELİME BİR BAĞLANTI</span><h1 id="boot-title">SÖZCÜK<br>ZİNCİRİ</h1><p role="status">Kelimeler hazırlanıyor…</p></main></div>
+  <div id="app"><main class="boot" data-screen="loading" aria-labelledby="boot-title"><img class="mascot boot-mascot" src="assets/app-logo.webp" alt="Sözcük Zinciri maskotu ve kelime tahtası" width="512" height="512" decoding="async"><span class="tag">HER KELİME BİR BAĞLANTI</span><h1 id="boot-title">SÖZCÜK<br>ZİNCİRİ</h1><p role="status">Kelimeler hazırlanıyor…</p></main></div>
   <div id="toast" role="status" aria-live="polite"></div>
   <noscript>Bu oyunu oynamak için JavaScript'i etkinleştir.</noscript>
   <script id="online-config" type="application/json">{"baseUrl": "https://sozcuk-zinciri-api-ardaisik.ardadc99.chatgpt.site"}</script>
@@ -80,6 +82,7 @@ class ZincirState {
 
   _defaults() {
     this.profileName = '';
+    this.profileAvatar = 'mascot-boy';
     this.gold = START_GOLD;
     this.score = 0;
     this.completed = [];
@@ -96,6 +99,13 @@ class ZincirState {
     const name = String(value ?? '').trim();
     if (name.length < 2 || name.length > 18 || /[\u0000-\u001f\u007f]/u.test(name)) return false;
     this.profileName = name;
+    this.saveLocal();
+    return true;
+  }
+
+  setAvatar(value) {
+    if (!['mascot-boy', 'mascot-girl'].includes(value)) return false;
+    this.profileAvatar = value;
     this.saveLocal();
     return true;
   }
@@ -220,7 +230,7 @@ class ZincirState {
   saveLocal() {
     this._storeCurrent();
     if (!this.storage) { this.lastSaveOk = false; return false; }
-    const record = JSON.stringify({ version: 1, profileName: this.profileName, gold: this.gold,
+    const record = JSON.stringify({ version: 1, profileName: this.profileName, profileAvatar: this.profileAvatar, gold: this.gold,
       score: this.score, completed: this.completed, tutorialDone: this.tutorialDone,
       settings: this.settings, progress: this.progress });
     try {
@@ -251,6 +261,7 @@ class ZincirState {
     this.revealed = {};
     this.hintUsed = {};
     this.profileName = String(data.profileName ?? '').trim().slice(0, 18);
+    this.profileAvatar = data.profileAvatar === 'mascot-girl' ? 'mascot-girl' : 'mascot-boy';
     this.gold = integer(data.gold, START_GOLD);
     this.score = integer(data.score);
     this.tutorialDone = data.tutorialDone === true;
@@ -298,7 +309,9 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 const icon = (name, cls='') => `<img class="icon ${cls}" src="assets/icons/${name}.svg" alt="" aria-hidden="true" width="28" height="28">`;
 const btn = (text, action, cls='', attrs='') => `<button type="button" class="btn ${cls}" data-action="${action}" ${attrs}>${text}</button>`;
 const tag = (text, cls='') => `<span class="tag ${cls}">${text}</span>`;
-const mascot = (cls='', alt='Gazetesindeki kelime bulmacasını çözen mavi damla maskot') => `<img class="mascot ${cls}" data-pose="editorial" src="assets/mascot-editorial.webp" alt="${alt}" width="512" height="512" decoding="async">`;
+const mascot = (cls='', alt='Kelime arkadaşın mavi damla', pose='editorial') => `<img class="mascot ${cls}" data-pose="${pose}" src="assets/mascot-${pose}.webp" alt="${esc(alt)}" width="512" height="512" decoding="async">`;
+const avatar = (value=state?.profileAvatar,cls='') => `<img class="profile-avatar ${cls}" src="assets/${value==='mascot-girl'?'mascot-girl':'mascot-boy'}.webp" width="100" height="100" alt="${value==='mascot-girl'?'Kız':'Erkek'} damla maskot" decoding="async">`;
+const avatarChoices = () => `<fieldset class="avatar-picker"><legend>Kelime arkadaşını seç</legend>${['mascot-boy','mascot-girl'].map(value=>`<button type="button" class="avatar-choice ${state.profileAvatar===value?'selected':''}" data-action="choose-avatar" data-avatar="${value}" aria-pressed="${state.profileAvatar===value}">${avatar(value)}<span>${value==='mascot-boy'?'Erkek maskot':'Kız maskot'}</span></button>`).join('')}</fieldset>`;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let state, screen='loading', category='Tümü', partyLevel, partyCount=0, lastResult={}, toastTimer, audio;
 let transitioning=false, transitionToken=0, onlineScreen=null, onlineOpenToken=0;
@@ -322,7 +335,7 @@ function sound(kind='tap') {
   } catch { /* Audio is optional; gameplay continues if the device disables it. */ }
 }
 function bar(title='', back=false) {
-  return `<header class="topbar">${back?`<button type="button" class="icon-btn" data-action="home" data-testid="back-home" aria-label="Ana menü">${icon('back')}</button>`:''}<div class="brand">${!back?mascot('brand-mascot',''):''}<span class="${back?'bar-title':''}">${title?esc(title):'SÖZCÜK<br>ZİNCİRİ'}</span></div><div class="coins" aria-label="${state.gold} altın">${icon('coin')}<span data-testid="gold">${state.gold}</span></div>${!back?`<button type="button" class="icon-btn" data-action="settings" aria-label="Oyuncu ve ayarlar">${icon('settings')}</button>`:''}</header>`;
+  return `<header class="topbar">${back?`<button type="button" class="icon-btn" data-action="home" data-testid="back-home" aria-label="Ana menü">${icon('back')}</button><div class="brand"><span class="bar-title">${esc(title)}</span></div>`:`<button type="button" class="home-profile" data-action="settings" aria-label="Oyuncu kartını aç">${avatar()}<span><small>OYUNCU KARTIN</small><strong>${esc(state.profileName)}</strong></span></button>`}<div class="coins" aria-label="${state.gold} altın">${icon('coin')}<span data-testid="gold">${state.gold}</span></div>${!back?`<button type="button" class="icon-btn" data-action="settings" aria-label="Oyuncu ve ayarlar">${icon('settings')}</button>`:''}</header>`;
 }
 function setScreen(name, html, cls='', keepScroll=false) {
   if(onlineScreen){onlineScreen.destroy();onlineScreen=null;}
@@ -341,11 +354,11 @@ function available(level) {
 function categoryIcon(c) {return ({Mutfak:'chef',Spor:'ball','Doğa':'leaf','Kültür':'book'})[c]||'chain';}
 
 function profile() {
-  setScreen('profile',`<div class="stack">${mascot('profile-mascot','Gazetesiyle seni karşılayan mavi damla')}${tag('KELİME KULÜBÜNE HOŞ GELDİN')}<h1>Sana ne diyelim?</h1><p>Bir isim seç, birlikte kelimelerin peşine düşelim.</p><form id="profile-form" class="stack"><label class="hidden" for="profile-name">Oyuncu adın</label><input class="name-input" id="profile-name" data-testid="profile-name" name="player" maxlength="18" minlength="2" placeholder="Oyuncu adın" autocomplete="off" required><button class="btn full" data-testid="profile-submit" type="submit">HADİ BAŞLAYALIM →</button></form><div class="coin-note">${icon('coin')}İlk 100 altının bizden!</div></div>`,'profile');
+  setScreen('profile',`<div class="stack"><img class="profile-logo" src="assets/app-logo.webp" width="200" height="200" alt="Sözcük Zinciri maskotu ve bulmaca tahtası">${tag('KELİME KULÜBÜNE HOŞ GELDİN')}<h1>Sana ne diyelim?</h1><p>Bir isim seç, birlikte kelimelerin peşine düşelim.</p><form id="profile-form" class="stack"><label class="hidden" for="profile-name">Oyuncu adın</label><input class="name-input" id="profile-name" data-testid="profile-name" name="player" maxlength="18" minlength="2" placeholder="Oyuncu adın" autocomplete="off" required>${avatarChoices()}<button class="btn full" data-testid="profile-submit" type="submit">HADİ BAŞLAYALIM →</button></form><div class="coin-note">${icon('coin')}İlk 100 altının bizden!</div></div>`,'profile');
 }
 function home() {
   const next=nextLevel();
-  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Bir kelime, yeni bir bağlantı. Sıradakini birlikte bulalım!</p><div class="mini-chain"><div>${tag('ÇAY → K · · · · ·')}<p>Tamlamayı yaz.<br>Köküyle devam et.</p></div>${mascot('mini-mascot','')}</div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div>${mascot('home-mascot')}</section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','lock','Karşılıklı 1v1','30 saniyelik sıralar, canlı sohbet ve arkadaşların.','KELİME SAVAŞI →','online')}</div><div class="footnote">${icon('spark')}<span>Acele yok, süre yok. Sadece sen ve kelimeler.</span></div></div>`);
+  setScreen('home',`${bar()}<div class="stack"><div class="welcome"><h2>Merhaba, ${esc(state.profileName)}!</h2><p class="muted">Bugün hangi kelimeye bağlanıyoruz?</p></div><nav class="home-shortcuts" aria-label="Oyuncu işlemleri">${btn(icon('profile')+'Arkadaş ekle','friends','white')}${btn(icon('trophy')+'Maç geçmişi','history','white')}${btn(icon('coin')+'Market','shop','gold')}</nav><section class="hero panel outlined"><div>${tag('HER KELİME BİR BAŞLANGIÇ')}<h1>Bağlantıyı bul.<br>Zinciri tamamla!</h1><p>Bir kelime, yeni bir bağlantı. Sıradakini birlikte bulalım!</p><div class="mini-chain"><div>${tag('ÇAY → K · · · · ·')}<p>Tamlamayı yaz.<br>Köküyle devam et.</p></div>${mascot('mini-mascot','')}</div>${btn(state.completed.length?'MACERAYA DEVAM →':'MACERAYA BAŞLA →','play','full','data-testid="home-play"')}</div>${mascot('home-mascot')}</section><section class="journey panel"><div class="row spread"><div class="row">${icon('trophy')}<span class="eyebrow">KELİME YOLCULUĞUN</span></div><span class="muted small">${state.completed.length} / ${state.levels.length}</span></div><div class="progress"><i style="width:${state.completed.length/state.levels.length*100}%"></i></div><div class="row spread"><span class="muted small">${state.score} puan</span>${btn('Bölümler →','levels','soft small','data-testid="nav-levels"')}</div></section><div class="eyebrow">OYUN ALANIN</div><div class="mode-grid">${modeCard('party','party','Parti zamanı!','Ekranı ortaya koy. Zincirler açığa çıksın.','PARTİ MODU →','party','data-testid="nav-party"')}${modeCard('explore','chef','Bir kategori seç','Mutfak, spor, doğa… Kendi rotanı çiz.','KEŞFET →','levels')}${modeCard('online','chain','Karşılıklı 1v1','Arkadaşınla oyna veya hemen bir rakiple eşleş.','KELİME SAVAŞI →','online')}</div><div class="footnote">${icon('spark')}<span>Tek başına keşfet, arkadaşlarınla kelimelerde buluş.</span></div></div>`);
 }
 function modeCard(cls,ico,title,desc,label,action,attrs='') {
   return `<section class="mode-card panel ${cls}"><div class="row">${icon(ico)}<h3>${title}</h3></div><p>${desc}</p>${btn(label,action,'white small',attrs)}</section>`;
@@ -371,7 +384,7 @@ function game({focus=false,draft=null,scroll=false}={}) {
   const tips=['','Çay kaşığı! K hazır; kutulara AŞIĞI yaz. KAŞIĞI, kısa bir hareketle KAŞIK olacak.','Şimdi kaşık oyunu! O hazır; YUNU yaz. OYUNU → OYUN olacak ve zincir devam edecek.','Son bağlantı: oyun havası. H hazır; AVASI yaz. Tamlamayı doğal hâliyle tamamla!'];
   let chain='';
   l.words.forEach((w,i)=>{if(i>0)chain+=`<div class="connector ${i<state.activeIndex?'done':''}">${icon('chain')}<span>${i<state.activeIndex?esc(l.links[i-1]):i===state.activeIndex?esc(state.stemWord(i-1))+' + '+state.answerWord(i)[0]+'…':''}</span></div>`;chain+=i===state.activeIndex?`<section class="active-group">${wordRow(w,i)}${controls(tutorial)}</section>`:wordRow(w,i);});
-  setScreen('game',`${bar(tutorial?'Birlikte çözelim':l.category,true)}<section class="game-top"><div class="row spread">${tag(tutorial?'ALIŞTIRMA':'KELİME ZİNCİRİ')}<span class="small muted">${state.activeIndex} / ${l.words.length-1}</span></div><h1>${tutorial&&state.activeIndex===1?'İlk bağlantıyı kur.':'Zinciri devam ettir!'}</h1><div class="progress"><i style="width:${(state.activeIndex-1)/(l.words.length-1)*100}%"></i></div>${tutorial?`<div class="panel tutorial-tip mascot-tip">${mascot('tip-mascot','Gazetesindeki bulmacayı çözen maskot')}<p>${tips[state.activeIndex]}</p></div>`:`<div class="panel mascot-tip play-tip">${mascot('tip-mascot','')}<p>Ekleriyle tamamla, köküyle devam et. Haydi, birlikte bulalım!</p></div>`}</section><div class="chain">${chain}</div><p class="game-footer">${tutorial?'İlk harfler bizden. Gerisi sende!':'Bölüm ödülü: 40 altın + 100 puan'}</p>`,'narrow',scroll);
+  setScreen('game',`${bar(tutorial?'Birlikte çözelim':l.category,true)}<section class="game-top"><div class="row spread">${tag(tutorial?'ALIŞTIRMA':'KELİME ZİNCİRİ')}<span class="small muted">${state.activeIndex} / ${l.words.length-1}</span></div><h1>${tutorial&&state.activeIndex===1?'İlk bağlantıyı kur.':'Zinciri devam ettir!'}</h1><div class="progress"><i style="width:${(state.activeIndex-1)/(l.words.length-1)*100}%"></i></div>${tutorial?`<div class="panel tutorial-tip mascot-tip">${mascot('tip-mascot','Oyunu anlatan damla maskot','teacher')}<div class="teacher-speech"><span class="eyebrow">BİRLİKTE ÖĞRENELİM · ${state.activeIndex} / 3</span><p>${tips[state.activeIndex]}</p></div></div>`:`<div class="panel mascot-tip play-tip">${mascot('tip-mascot','')}<p>Ekleriyle tamamla, köküyle devam et. Haydi, birlikte bulalım!</p></div>`}</section><div class="chain">${chain}</div><p class="game-footer">${tutorial?'İlk harfler bizden. Gerisi sende!':'Bölüm ödülü: 40 altın + 100 puan'}</p>`,'narrow',scroll);
   const input=wordInput();
   if(draft)restoreDraft(draft);
   if(focus){input.focus({preventScroll:true});scrollActive();}
@@ -469,27 +482,27 @@ function joker(kind) {
 }
 function win() {
   const l=state.currentLevel,tutorial=l.id==='tutorial',next=nextLevel();
-  setScreen('win',`<div class="stack">${mascot('win-mascot','Bulmacasını tamamlayan mavi damla')}${tag('BAĞLANTILAR TAMAM!')}<h1>İşte bu, zincir sende!</h1><p>${tutorial?'Artık hazırsın! Tamlamayı yaz, kelimenin köküyle devam et. Kendi kelime yolculuğuna başlayabilirsin.':'Bir bağlantı daha keşfettin. Kelime yolculuğun büyümeye devam ediyor.'}</p><section class="panel summary">${l.words.map((w,i)=>`<h3>${esc(w)}</h3>${l.links[i]?`<p>↳ ${esc(l.links[i])}</p>`:''}`).join('')}</section>${!tutorial?`<div class="rewards"><span class="row">${icon('coin')}+${lastResult.rewardGold||0} altın</span><span class="score">+${lastResult.rewardScore||0} puan</span></div>${!lastResult.rewardGold?'<p class="muted small">Bu bölümün ödülünü daha önce aldın. Yeni ödüller için yeni zincirleri çöz.</p>':''}`:''}${btn(tutorial?'ANA MENÜYE →':next?'SIRADAKİ ZİNCİR →':'ANA MENÜYE →',tutorial||!next?'home':'play','full','data-testid="win-primary"')}${tutorial&&next?btn('İLK ZİNCİRİ ÇÖZ','play','white full'):!tutorial?btn('BÖLÜMLERE DÖN','levels','white full'):''}</div>`,'win');
+  setScreen('win',`<div class="stack">${mascot('win-mascot','Başarını kutlayan mavi damla','celebrate')}${tag('BAĞLANTILAR TAMAM!')}<h1>İşte bu, zincir sende!</h1><p>${tutorial?'Artık hazırsın! Tamlamayı yaz, kelimenin köküyle devam et. Kendi kelime yolculuğuna başlayabilirsin.':'Bir bağlantı daha keşfettin. Kelime yolculuğun büyümeye devam ediyor.'}</p><section class="panel summary">${l.words.map((w,i)=>`<h3>${esc(w)}</h3>${l.links[i]?`<p>↳ ${esc(l.links[i])}</p>`:''}`).join('')}</section>${!tutorial?`<div class="rewards"><span class="row">${icon('coin')}+${lastResult.rewardGold||0} altın</span><span class="score">+${lastResult.rewardScore||0} puan</span></div>${!lastResult.rewardGold?'<p class="muted small">Bu bölümün ödülünü daha önce aldın. Yeni ödüller için yeni zincirleri çöz.</p>':''}`:''}${btn(tutorial?'ANA MENÜYE →':next?'SIRADAKİ ZİNCİR →':'ANA MENÜYE →',tutorial||!next?'home':'play','full','data-testid="win-primary"')}${tutorial&&next?btn('İLK ZİNCİRİ ÇÖZ','play','white full'):!tutorial?btn('BÖLÜMLERE DÖN','levels','white full'):''}</div>`,'win');
 }
 function party(newChain=true) {
   if(newChain||!partyLevel){const choices=state.levels.filter(l=>l.id!==partyLevel?.id);partyLevel=choices[Math.floor(Math.random()*choices.length)];partyCount++;}
   setScreen('party',`${bar('Parti zamanı!',true)}<div class="stack"><div class="row spread">${tag('HEP BİRLİKTE OYNAYIN')}<span class="small muted">Zincir ${String(partyCount).padStart(2,'0')}</span></div><h1>Kelimeler masada.</h1><p>Sırayla bir kelime söyleyin, bağlantısını açıklayın. Yeni bir tur için zincire dokunun.</p><section class="panel outlined party-chain" data-action="party-next"><span class="eyebrow">${esc(partyLevel.category.toLocaleUpperCase('tr-TR'))}</span>${partyLevel.words.map((w,i)=>`${btn(esc(w),'party-next','full')}${partyLevel.links[i]?`<p class="party-link">↓ ${esc(partyLevel.links[i])}</p>`:''}`).join('')}</section>${btn('YENİ ZİNCİR ↻','party-next','full','data-testid="party-next"')}<p class="muted small">Parti modunda altın harcanmaz, ilerlemen değişmez. Telefonu arkadaşlarınla paylaşman yeterli.</p></div>`,'narrow');
 }
 function settings() {
-  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Tamlamayı ekleriyle yaz: SU + BARDAĞI gibi. Cevap kısa bir animasyonla BARDAK olur; sıradaki bağlantıyı bu kökle kur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.5</span></section></div>`,'narrow');
+  setScreen('settings',`${bar('Oyuncu kartın',true)}<div class="stack settings-stack"><section class="panel outlined settings-card"><div class="row">${avatar()}<div><h1>${esc(state.profileName)}</h1><p>${state.completed.length} bölüm · ${state.score} puan</p></div></div>${avatarChoices()}</section><div class="eyebrow">OYUN AYARLARI</div>${btn(`Sesler: ${state.settings.sound?'AÇIK':'KAPALI'}`,'sound','white full')}${btn(`Titreşim: ${state.settings.haptics?'AÇIK':'KAPALI'}`,'haptics','white full')}${btn('ÖĞRETİCİYİ TEKRAR OYNA','tutorial','gold full')}<p class="muted">İlerleme bu cihazda otomatik kaydedilir. Aynı tarayıcı ve adresle devam edebilirsin.</p><section class="panel rules"><strong>NASIL OYNANIR?</strong><p>İlk kelime açık. Sonraki kelimenin ilk harfi ve uzunluğu hazır. Kutulara dokun, eksik harfleri yaz ve kontrol et. Tamlamayı ekleriyle yaz: SU + BARDAĞI gibi. Cevap kısa bir animasyonla BARDAK olur; sıradaki bağlantıyı bu kökle kur.</p><br><p>Harf: 20 altın · Tanım ipucu: 15 altın<br>Yeni bölüm: +40 altın · +100 puan</p><br><span class="muted small">Sözcük Zinciri · Türkçe · v1.8</span></section></div>`,'narrow');
 }
-async function online() {
+async function online(entry='choose') {
   setScreen('online',`${bar('Kelime Savaşı',true)}<div class="stack"><h1>Rakibin hazır mı?</h1><p role="status">Oyun alanı hazırlanıyor…</p></div>`,'narrow');
   const token=onlineOpenToken;
   try {
     // Load multiplayer only when requested: solo startup stays lightweight.
     if(!document.querySelector('link[data-online-style]')){
-      const css=document.createElement('link');css.rel='stylesheet';css.href='online.css?v=7';css.dataset.onlineStyle='true';document.head.append(css);
+      const css=document.createElement('link');css.rel='stylesheet';css.href='online.css?v=8';css.dataset.onlineStyle='true';document.head.append(css);
     }
-    const {OnlineScreen}=await import('./online.js?v=7');
+    const {OnlineScreen}=await import('./online.js?v=8');
     if(token!==onlineOpenToken||screen!=='online')return;
     let config={};try{config=JSON.parse(document.querySelector('#online-config')?.textContent||'{}');}catch{}
-    onlineScreen=new OnlineScreen({app,name:state.profileName,onHome:home,toast,sound,baseUrl:config.baseUrl||''});
+    onlineScreen=new OnlineScreen({app,name:state.profileName,avatar:state.profileAvatar,entry,onProfile:profile=>{if(profile.avatar)state.setAvatar(profile.avatar);},onHome:home,toast,sound,baseUrl:config.baseUrl||''});
     await onlineScreen.open();
   } catch(error){
     if(token!==onlineOpenToken||screen!=='online')return;
@@ -514,6 +527,10 @@ app.addEventListener('click',event=>{
     case 'party-next':party();break;
     case 'settings':settings();break;
     case 'online':online();break;
+    case 'friends':online('friends');break;
+    case 'history':online('history');break;
+    case 'shop':online('shop');break;
+    case 'choose-avatar':{const draft=app.querySelector('#profile-name')?.value;state.setAvatar(target.dataset.avatar);screen==='profile'?profile():settings();if(draft!==undefined)app.querySelector('#profile-name').value=draft;break;}
     case 'tutorial':startLevel('tutorial');break;
     case 'sound':state.settings.sound=!state.settings.sound;state.saveLocal();settings();break;
     case 'haptics':state.settings.haptics=!state.settings.haptics;state.saveLocal();settings();break;

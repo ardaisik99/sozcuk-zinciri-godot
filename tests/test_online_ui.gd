@@ -18,7 +18,7 @@ class FakeClient extends "res://scripts/online_client.gd":
 	func start(_player_name: String, _config_path: String = DEFAULT_CONFIG) -> bool:
 		configured = true
 		base_url = "http://127.0.0.1:8787"
-		profile = {"id": "fixture-a", "code": "1465", "name": "Gökçen", "wins": 0, "played": 0}
+		profile = {"id": "fixture-a", "code": "1465", "name": "Gökçen", "wins": 0, "played": 0, "avatar": "mascot-boy", "gold": 100, "inventory": {"hint": 0, "letter": 0}}
 		_token = "fixture-only-not-a-real-session-token"
 		_set_status("connected")
 		changed.emit()
@@ -30,7 +30,12 @@ class FakeClient extends "res://scripts/online_client.gd":
 		if path == "/v1/profile":
 			var renamed = profile.duplicate(true)
 			renamed.name = payload.get("name", "")
+			renamed.avatar = payload.get("avatar", "mascot-boy")
 			return {"ok": true, "profile": renamed}
+		if path == "/v1/history": return {"ok": true, "history": [{"roomCode": "HIS234", "opponent": {"name": "Deniz", "avatar": "mascot-girl", "isBot": true}, "result": "win", "score": [2, 1], "finishedAt": 10000000, "review": [{"prompt": "SU", "answer": "BARDAĞI", "stem": "BARDAK"}]}]}
+		if path == "/v1/shop": return {"ok": true, "gold": 100, "inventory": {"hint": 0, "letter": 0}, "products": [{"id": "hint_pack", "title": "2 ipucu", "goldPrice": 25, "purchasable": true}, {"id": "remove_ads", "title": "Reklamları kaldır", "purchasable": false}]}
+		if path == "/v1/matchmaking/join": return {"ok": true, "status": "waiting", "botAfterAt": local_now_ms() + 15000}
+		if path == "/v1/matchmaking/cancel": return {"ok": true, "status": "idle"}
 		if path == "/v1/rooms" or path.ends_with("/join"): return {"ok": true, "roomCode": "ABC234"}
 		return {"ok": true}
 	func _open_socket(kind: String) -> void:
@@ -88,7 +93,7 @@ func put_json(path: String, value: Dictionary) -> void:
 	file.close()
 
 func snapshot(phase: String = "playing") -> Dictionary:
-	return {"roomCode": "ABC234", "phase": phase, "players": [{"id": "fixture-a", "name": "Gökçen", "code": "1465", "score": 0, "roundWins": 0, "connected": true}, {"id": "fixture-b", "name": "Abcdefghijklmnopqr", "code": "1466", "score": 0, "roundWins": 0, "connected": true}], "activePlayerId": "fixture-a", "deadlineAt": Client.local_now_ms() + (3000 if phase == "countdown" else 30000), "serverNow": Client.local_now_ms(), "turnId": 1, "activeIndex": 1, "chain": [{"stem": "ÇAY", "answer": "ÇAY", "status": "solved"}, {"first": "K", "length": 6, "status": "hidden"}, {"first": "O", "length": 5, "status": "hidden"}, {"first": "H", "length": 6, "status": "hidden"}, {"first": "D", "length": 6, "status": "hidden"}], "messages": [], "winnerId": null, "lastCorrect": null, "roundNumber": 1, "roundResult": null, "continueReady": []}
+	return {"roomCode": "ABC234", "phase": phase, "players": [{"id": "fixture-a", "name": "Gökçen", "code": "1465", "score": 0, "roundWins": 0, "connected": true, "gold": 100, "avatar": "mascot-boy"}, {"id": "fixture-b", "name": "Abcdefghijklmnopqr", "code": "1466", "score": 0, "roundWins": 0, "connected": true, "gold": 100, "avatar": "mascot-girl"}], "activePlayerId": "fixture-a", "deadlineAt": Client.local_now_ms() + (3000 if phase == "countdown" else 30000), "serverNow": Client.local_now_ms(), "turnId": 1, "activeIndex": 1, "chain": [{"stem": "ÇAY", "answer": "ÇAY", "status": "solved"}, {"first": "K", "length": 6, "status": "hidden"}, {"first": "O", "length": 5, "status": "hidden"}, {"first": "H", "length": 6, "status": "hidden"}, {"first": "D", "length": 6, "status": "hidden"}], "messages": [], "winnerId": null, "lastCorrect": null, "roundNumber": 1, "roundResult": null, "continueReady": []}
 
 func has_wrong_label(node: Node) -> bool:
 	if node is Screen.WrongGuessLabel: return true
@@ -120,7 +125,7 @@ func _run() -> void:
 	fake = FakeClient.new()
 	fake.account_path = TEST_PREFIX + "_mock.json"
 	view = Screen.new()
-	view.setup("Gökçen", "", fake)
+	view.setup("Gökçen", "", fake, "friends")
 	view.return_home.connect(func(): returned_home = true)
 	scroller.add_child(view)
 	await settle()
@@ -159,6 +164,9 @@ func _run() -> void:
 	await settle()
 	check(view._question_label.text == "ÇAY → K_____", "The battle question should be one SU → B_____ style strip with inflected answer length.")
 	check(view._clock_label.text.contains("30") and view._chat_input.editable, "The active player should receive a thirty-second editable turn.")
+	await create_timer(0.3).timeout
+	await settle()
+	check(view._chat_input.get_global_rect().end.y <= 844, "Normal portrait battle must keep its answer input on screen.")
 	await capture_frame("native-online-playing.png")
 	var input_id = view._chat_input.get_instance_id()
 	view._chat_input.text = "kaşık"
@@ -234,7 +242,7 @@ func _run() -> void:
 	check(not is_instance_valid(view._leave_prompt) and view._chat_input.text == "[b]sohbet[/b]", "Cancelling a leave prompt should preserve the draft.")
 	state.phase = "round_end"
 	state.players[0].roundWins = 1
-	state.roundResult = {"winnerId": "fixture-a", "tieBreak": "speed", "scores": [{"id": "fixture-a", "score": 200}, {"id": "fixture-b", "score": 200}]}
+	state.roundResult = {"winnerId": "fixture-a", "tieBreak": "sudden_death", "scores": [{"id": "fixture-a", "score": 200}, {"id": "fixture-b", "score": 200}]}
 	state.continueReady = []
 	fake.receive_packet({"type": "state", "state": state})
 	check(view._continue_button.visible and not view._continue_button.disabled and not view._chat_input.editable, "A completed round should offer Continue and keep answer input locked.")
@@ -246,7 +254,7 @@ func _run() -> void:
 	state.phase = "finished"
 	state.players[0].roundWins = 2
 	state.winnerId = "fixture-a"
-	state.tieBreak = "speed"
+	state.tieBreak = "sudden_death"
 	state.endReason = "chain_complete"
 	fake.receive_packet({"type": "state", "state": state})
 	check(view._result_text.text.contains("2 – 0") and not view._continue_button.visible, "A 2–0 series should finish without an extra Continue action.")
@@ -254,6 +262,46 @@ func _run() -> void:
 	state.roundNumber = 3
 	fake.receive_packet({"type": "state", "state": state})
 	check(view._result_text.text.contains("2 – 1") and not view._continue_button.visible, "A deciding third round should show the 2–1 final series result.")
+	check(not view._result_text.text.contains("süre"), "Response speed must never break a tied score.")
+	state.review = [{"prompt": "SU", "answer": "BARDAĞI", "stem": "BARDAK", "status": "missed"}, {"prompt": "ÇAY", "answer": "KAŞIĞI", "stem": "KAŞIK", "status": "correct"}]
+	fake.receive_packet({"type": "state", "state": state})
+	check(view._result_text.text.contains("SU → BARDAĞI") and view._result_text.text.contains("ÇAY → KAŞIĞI"), "Both missed answers and last solved answers should remain visible on final results.")
+	state = snapshot()
+	state.question = {"prompt": "SU", "first": "B", "length": 7, "revealed": [{"index": 2, "letter": "R"}], "hint": "İçecek kabı"}
+	state.players[0].gold = 100
+	state.players[0].jokers = {"hintUsed": 1, "letterUsed": 2, "hintLimit": 2, "letterLimit": 4}
+	state.suddenDeath = true
+	state.questionNumber = 7
+	fake.receive_packet({"type": "state", "state": state})
+	check(view._question_label.text == "SU → B_R____" and view._hint_text.text == "İçecek kabı", "Server question and purchased letter/hint must render directly without guessing private answers.")
+	check(view._hint_button.text.contains("1/2") and view._letter_button.text.contains("2/4") and view._composer_clue.text.contains("Uzatma"), "Per-player match joker caps and sudden death should be explained.")
+	view._use_joker("letter")
+	check(fake.sent.back().type == "joker" and fake.sent.back().kind == "letter" and fake.sent.back().turnId == 1, "Joker purchase must be an authoritative command with turn identity.")
+	state.players[0].jokers = {"hintUsed": 2, "letterUsed": 4}
+	fake.receive_packet({"type": "state", "state": state})
+	check(view._hint_button.disabled and view._letter_button.disabled, "Exhausted match caps must disable both joker controls.")
+	fake.room_code = ""
+	fake.room_state = {}
+	await view._open_section("choose")
+	check(view._mode == "choose", "Online mode should present friend/random choice.")
+	await view._open_section("random")
+	await view._toggle_matchmaking()
+	check(fake.matchmaking.get("status") == "waiting" and view._queue_button.text.contains("İPTAL"), "Random queue should expose cancellation and wait for server pairing.")
+	await view._toggle_matchmaking()
+	check(fake.matchmaking.get("status") == "idle", "Queue cancellation must be persisted through the endpoint.")
+	await view._open_section("history")
+	check(view._mode == "history" and fake.history.size() == 1, "Match history should load authenticated server results.")
+	await view._open_section("shop")
+	check(fake.shop.products.size() == 2 and view._wallet_label.text.contains("100"), "Shop must use server wallet and catalog.")
+	await view._buy_product("hint_pack")
+	check(fake.calls.any(func(call): return call.path == "/v1/shop/buy" and call.body.productId == "hint_pack" and not str(call.body.requestId).is_empty()), "Gold purchases must use a unique server transaction request ID.")
+	for width in [276, 320, 390, 900]:
+		root.size = Vector2i(width, 844)
+		await settle()
+		check_layout("Shop %d" % width)
+	fake.room_code = "ABC234"
+	fake.room_state = {"phase": "finished"}
+	fake.save_account()
 	var reload = Client.new()
 	reload.account_path = fake.account_path
 	reload.load_account()
@@ -330,35 +378,33 @@ func _actual_transport() -> void:
 	check(await wait_for(func(): return a.room_state.get("phase", "") == "countdown"), "Server should begin the real three-second countdown.")
 	check(await wait_for(func(): return a.room_state.get("phase", "") == "playing", 6000), "Server should enter a real thirty-second turn.")
 	if a.room_state.get("phase", "") != "playing": a.queue_free(); b.queue_free(); await settle(); return
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://backend/private/chains.json"))
-	for round_index in 3:
-		var chain: Dictionary = {}
-		for candidate: Dictionary in parsed:
-			var matches = candidate.words[0] == a.room_state.chain[0].stem
-			for i in range(1, 5):
-				matches = matches and candidate.answers[i].substr(0, 1) == a.room_state.chain[i].first and candidate.answers[i].length() == a.room_state.chain[i].length
-			if matches: chain = candidate; break
-		check(not chain.is_empty(), "Test-only private bank should identify the fixture without shipping hidden answers to clients.")
-		if chain.is_empty(): break
-		var active = a if a.room_state.activePlayerId == a.profile.id else b
-		var other = b if active == a else a
-		check(other.send_chat("naber lan").is_empty() and other.last_error == "not_your_turn", "The inactive real native player must not send conversation or guesses.")
-		var chat_id = active.send_chat("naber lan")
-		check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == chat_id and message.kind == "chat")), "Active-player conversation should still be plain chat.")
-		var wrong_id = active.send_chat("yanlıştır")
-		check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == wrong_id and message.kind == "wrong")), "A wrong active guess should not end the thirty-second budget.")
-		for i in range(1, 5):
-			active = a if a.room_state.activePlayerId == a.profile.id else b
-			await create_timer(0.1 if active == a else 0.4).timeout
-			var correct_id = active.send_chat(str(chain.answers[i]))
-			check(await wait_for(func(): return a.room_state.messages.any(func(message): return message.get("clientMessageId", "") == correct_id and message.kind == "correct")), "Actual native inflected answer should receive its own acknowledgement and score.")
-		check(a.room_state.phase in ["round_end", "finished"], "A complete chain should end its round, not create an unrelated room.")
-		if a.room_state.phase == "finished": break
-		check(a.send_continue() and b.send_continue(), "Both native players should continue in the same room.")
-		check(await wait_for(func(): return a.room_state.get("phase", "") == "countdown"), "Both Continue actions should start the next round countdown.")
-		check(await wait_for(func(): return a.room_state.get("phase", "") == "playing", 6000), "The next five-word round should begin after its real countdown.")
-	check(a.room_state.phase == "finished" and a.room_state.players.any(func(player): return int(player.get("roundWins", 0)) == 2), "A native series must end at two round wins with 2–0 or 2–1.")
-	check(await wait_for(func(): return int(a.profile.get("played", 0)) >= 1 and int(b.profile.get("played", 0)) >= 1), "Finished native match should refresh persistent played/win profile statistics.")
+	check(int(a.room_state.get("questionsPerRound", 0)) == 6, "Actual backend must expose six questions per round.")
+	var active = a if a.room_state.activePlayerId == a.profile.id else b
+	var inactive = b if active == a else a
+	check(inactive.send_chat("naber lan").is_empty() and inactive.last_error == "not_your_turn", "Inactive native transport must reject all chat.")
+	check(active.send_joker("hint"), "Active native player should send a purchased hint.")
+	check(await wait_for(func(): return a.room_state.get("question", {}).get("hint") != null), "Hint must arrive from the server snapshot.")
+	check(active.send_joker("letter"), "Active native player should send a purchased letter.")
+	check(await wait_for(func(): return a.room_state.get("question", {}).get("revealed", []).size() > 0), "Purchased letter should be server-selected and visible.")
+	var active_id = str(active.profile.id)
+	var spent = false
+	for person: Dictionary in a.room_state.players:
+		if str(person.id) == active_id: spent = int(person.get("jokers", {}).get("hintUsed", 0)) == 1 and int(person.get("jokers", {}).get("letterUsed", 0)) == 1
+	check(spent, "Each joker should count against that player's match cap.")
+	b.leave_room()
+	check(await wait_for(func(): return a.room_state.get("phase", "") == "finished"), "Explicit forfeit should end the authoritative native match.")
+	check(await a.refresh_history() and not a.history.is_empty(), "Native match history must load a completed server record.")
+	check(await a.refresh_shop() and a.shop.get("products", []).size() > 0, "Native shop catalog must load from live backend.")
+	for product: Dictionary in a.shop.get("products", []):
+		if not product.has("goldPrice"): check(not product.get("purchasable", true), "Real-money products must remain unavailable until receipt validation is configured.")
+	a.leave_room()
+	await settle()
+	check(await a.join_matchmaking(), "Native random queue join should succeed.")
+	check(await b.join_matchmaking(), "A second native account should join the matching queue.")
+	check(await wait_for(func(): return not a.room_code.is_empty() and a.room_code == b.room_code, 10000), "Two native waiting players should match each other before bot fallback.")
+	check(await wait_for(func(): return a.room_state.get("phase", "") == "playing", 10000), "Random human match should begin automatically after countdown.")
+	b.leave_room()
+	check(await wait_for(func(): return a.room_state.get("phase", "") == "finished"), "Random match leave should finish cleanly.")
 	var copy = Client.new()
 	copy.account_path = a.account_path
 	copy.load_account()

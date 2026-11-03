@@ -1,365 +1,73 @@
-// Synchronous, server-authoritative match rules. No network, timers, or client state.
-export const COUNTDOWN_MS = 3_000;
-export const TURN_MS = 30_000;
-export const MATCH_MS = 240_000;
-export const CORRECT_SCORE = 100;
-export const MESSAGE_LIMIT = 160;
-export const MESSAGE_HISTORY_LIMIT = 100;
-export const PUBLIC_MESSAGE_LIMIT = 60;
-export const RECENT_MESSAGE_LIMIT = 128;
-
-const copy = value => JSON.parse(JSON.stringify(value));
-const lettersOnly = /^[A-Za-zÇĞİÖŞÜçğıöşü]+$/u;
-const controls = /[\u0000-\u001f\u007f-\u009f]/u;
-export const normalizeAnswer = value => String(value).normalize('NFC').trim().toLocaleUpperCase('tr-TR');
-const validTime = now => {
-  if (!Number.isFinite(now) || now < 0) throw new TypeError('now must be a nonnegative server timestamp.');
-  return Math.trunc(now);
-};
-const failure = (reason, changed = false) => ({ ok: false, reason, changed });
-const member = (match, id) => match.players.find(player => player.id === id);
-const opponent = (match, id) => match.players.find(player => player.id !== id);
-
-function playerRecord(player) {
-  if (!player || typeof player.id !== 'string' || !player.id || typeof player.name !== 'string' || !player.name.trim() || typeof player.code !== 'string' || !player.code) throw new TypeError('Player id, name and public code are required.');
-  if (player.name.length > 18 || controls.test(player.name)) throw new TypeError('Invalid player name.');
-  return { id: player.id, name: player.name.trim(), code: player.code, score: 0, responseMs: 0, roundWins: 0, connected: true };
+// Six-question rounds with equal-opportunity sudden death. Existing v2 rooms
+// finish under their original protocol; all newly prepared rooms use version 3.
+import * as legacy from './legacy-match.mjs';
+export const COUNTDOWN_MS=3000,TURN_MS=30000,MATCH_MS=240000,CORRECT_SCORE=100;
+export const MESSAGE_LIMIT=160,MESSAGE_HISTORY_LIMIT=100,PUBLIC_MESSAGE_LIMIT=60,RECENT_MESSAGE_LIMIT=128;
+export const QUESTIONS_PER_ROUND=6,JOKER_COST={hint:15,letter:20},JOKER_LIMIT={hint:2,letter:4};
+const clone=v=>JSON.parse(JSON.stringify(v));
+const letters=/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/u,controls=/[\u0000-\u001f\u007f-\u009f]/u;
+export const normalizeAnswer=v=>String(v).normalize('NFC').trim().toLocaleUpperCase('tr-TR');
+const atTime=v=>{if(!Number.isFinite(v)||v<0)throw new TypeError('Invalid server time');return Math.trunc(v);};
+const fail=(reason,changed=false)=>({ok:false,reason,changed});
+const member=(m,id)=>m.players.find(p=>p.id===id),other=(m,id)=>m.players.find(p=>p.id!==id),old=m=>m.version<3;
+function playerRecord(p){
+  if(!p||typeof p.id!=='string'||!p.id||typeof p.name!=='string'||!p.name.trim()||p.name.length>18||controls.test(p.name)||!p.code)throw new TypeError('Invalid player');
+  return {id:p.id,name:p.name.trim(),code:String(p.code),avatar:p.avatar==='mascot-girl'?'mascot-girl':'mascot-boy',isBot:!!p.isBot,score:0,responseMs:0,roundWins:0,connected:true,gold:Number.isSafeInteger(p.gold)?p.gold:100,inventory:{hint:p.inventory?.hint||0,letter:p.inventory?.letter||0},jokers:{hintUsed:0,letterUsed:0,hintLimit:2,letterLimit:4}};
 }
-
-function chainCells(chain) {
-  if (!chain || !Array.isArray(chain.words) || chain.words.length !== 5 || !Array.isArray(chain.answers) || chain.answers.length !== 5) throw new TypeError('An exact five-word chain is required.');
-  if (chain.answers[0] !== chain.words[0] || [...chain.words, ...chain.answers].some(word => typeof word !== 'string' || !word || normalizeAnswer(word) !== word || !lettersOnly.test(word))) throw new TypeError('Chain stems and answers must be uppercase Turkish words.');
-  return chain.words.map((stem, index) => ({ stem, answer: chain.answers[index], first: chain.answers[index][0], length: chain.answers[index].length, status: index === 0 ? 'solved' : 'hidden' }));
+function cellsOf(chain){
+  let questions=chain?.questions;
+  if(!questions&&Array.isArray(chain?.words)&&Array.isArray(chain.answers)&&chain.words.length===chain.answers.length)questions=chain.words.slice(1).map((stem,i)=>({prompt:chain.words[i],answer:chain.answers[i+1],stem,hint:chain.hints?.[i+1]||chain.links?.[i]||''}));
+  if(!Array.isArray(questions)||questions.length<6)throw new TypeError('Six questions required');
+  const cells=questions.map(q=>{
+    if(!q||[q.prompt,q.answer,q.stem].some(v=>typeof v!=='string'||!v||normalizeAnswer(v)!==v||!letters.test(v)))throw new TypeError('Invalid question');
+    return {from:q.prompt,stem:q.stem,answer:q.answer,hint:typeof q.hint==='string'?q.hint:'Bu kelime için ipucu henüz eklenmedi.',questionId:`${q.prompt}|${q.answer}`,first:q.answer[0],length:q.answer.length,status:'hidden',revealed:[],hintOpen:false};
+  });
+  return [{stem:cells[0].from,answer:cells[0].from,first:cells[0].from[0],length:cells[0].from.length,status:'solved'},...cells];
 }
-
-// Existing rooms survive a deployment. Completed v1 rooms remain completed;
-// an in-flight v1 turn receives the additional ten seconds exactly once.
-function upgrade(match) {
-  if (match.version >= 2) return false;
-  match.version = 2;
-  match.roundNumber = 1;
-  match.roundResult = null;
-  match.continueReady = [];
-  match.roundEndedAt = null;
-  match.roundStartedAt = match.startedAt ?? null;
-  match.usedChainIds = [];
-  for (const player of match.players) player.roundWins = 0;
-  if (match.phase === 'playing') {
-    match.deadlineAt += 10_000;
-    match.matchEndsAt = (match.startedAt || match.createdAt) + MATCH_MS;
-  } else if (match.phase === 'countdown') match.matchEndsAt = match.deadlineAt + MATCH_MS;
-  return true;
+function message(m,{playerId=null,name='Oyun',text,kind='system',at,clientMessageId}){const v={id:String(++m.messageCounter),playerId,name,text,kind,at};if(clientMessageId)v.clientMessageId=clientMessageId;m.messages.push(v);if(m.messages.length>100)m.messages.splice(0,m.messages.length-100);return v;}
+function reviewCell(m,c,status,playerId,at){c.status=status;m.review.push({questionId:c.questionId,prompt:c.from,answer:c.answer,stem:c.stem,status,playerId:playerId||null,at,roundNumber:m.roundNumber});message(m,{text:`${c.from} → ${c.answer} (${c.stem})`,kind:'reveal',at});}
+function revealRemaining(m,at){const c=m.chain[m.activeIndex];if(m.startedAt!==null&&c?.status==='hidden')reviewCell(m,c,'unanswered',null,at);}
+function finishSeries(m,reason,at,winnerId=null){if(m.phase==='finished')return;revealRemaining(m,at);m.phase='finished';m.finishedAt=at;m.endReason=reason;m.activePlayerId=null;m.deadlineAt=null;m.turnId++;m.winnerId=winnerId;message(m,{text:winnerId?`${member(m,winnerId).name} kazandı!`:reason==='room_closed'?'Oda kapatıldı.':'Karşılaşma berabere tamamlandı.',at});}
+function finishRound(m,reason,at,winnerId=null){
+  revealRemaining(m,at);if(!winnerId&&reason!=='bank_exhausted'&&m.players[0].score!==m.players[1].score)winnerId=m.players[0].score>m.players[1].score?m.players[0].id:m.players[1].id;
+  m.roundResult={winnerId,tieBreak:m.suddenDeath?'sudden_death':null,reason,scores:m.players.map(({id,score,responseMs=0})=>({id,score,responseMs})),review:clone(m.review.filter(q=>q.roundNumber===m.roundNumber))};m.roundResults.push({roundNumber:m.roundNumber,...clone(m.roundResult)});m.roundEndedAt=at;m.activePlayerId=null;m.deadlineAt=null;m.turnId++;m.continueReady=[];m.tieBreak=m.roundResult.tieBreak;
+  const winner=member(m,winnerId);if(winner)winner.roundWins++;
+  if(winner?.roundWins>=2)finishSeries(m,'series_complete',at,winnerId);else{m.phase='round_end';m.winnerId=null;message(m,{text:winner?`${winner.name} turu kazandı. Devam etmek için ikiniz de hazır olun.`:'Tur berabere. Yeni sorularla devam edebilirsiniz.',at});}
 }
-
-function addMessage(match, { playerId = null, name = 'Oyun', text, kind = 'system', at, clientMessageId }) {
-  match.messageCounter += 1;
-  const message = { id: String(match.messageCounter), playerId, name, text, kind, at };
-  if (clientMessageId) message.clientMessageId = clientMessageId;
-  match.messages.push(message);
-  if (match.messages.length > MESSAGE_HISTORY_LIMIT) match.messages.splice(0, match.messages.length - MESSAGE_HISTORY_LIMIT);
-  return message;
+function nextTurn(m,id,at){m.activePlayerId=id;m.deadlineAt=at+TURN_MS;m.turnId++;}
+function afterQuestion(m,at,success,playerId){
+  m.activeIndex++;m.consecutiveTimeouts=0;
+  if(m.suddenDeath){m.suddenPair.push({playerId,success});if(m.suddenPair.length===2){const[a,b]=m.suddenPair;if(a.success!==b.success){finishRound(m,'sudden_death',at,a.success?a.playerId:b.playerId);return;}m.suddenPair=[];m.suddenPairNumber++;message(m,{text:a.success?'İkiniz de bildiniz. Uzatma devam ediyor.':'İkiniz de bilemediniz. Cevaplar açıldı; uzatma devam ediyor.',at});}}
+  else if(m.activeIndex>6){if(m.players[0].score!==m.players[1].score){finishRound(m,'six_questions',at);return;}m.suddenDeath=true;m.suddenPair=[];m.suddenPairNumber=1;message(m,{text:'Skor eşit! Uzatma: her oyuncuya eşit cevap hakkı. Biriniz bilip diğeriniz bilemezse tur biter.',at});}
+  m.needsQuestions=m.activeIndex>=m.chain.length;nextTurn(m,other(m,playerId).id,at);
 }
-
-function finishSeries(match, reason, at, winnerId = null) {
-  if (match.phase === 'finished') return;
-  match.phase = 'finished';
-  match.finishedAt = at;
-  match.endReason = reason;
-  match.activePlayerId = null;
-  match.deadlineAt = null;
-  match.turnId += 1;
-  match.winnerId = winnerId;
-  const winner = member(match, match.winnerId);
-  addMessage(match, { text: winner ? `${winner.name} kazandı!` : reason === 'room_closed' ? 'Oda kapatıldı.' : 'Karşılaşma berabere tamamlandı.', at });
+export function createMatch({roomCode,host,chain,now}){
+  if(!chain?.questions&&chain?.words?.length===5)return legacy.createMatch({roomCode,host,chain,now});const at=atTime(now),p=playerRecord(host),cells=cellsOf(chain);
+  return {version:3,roomCode,hostId:p.id,players:[p],phase:'waiting',chain:cells,currentChainId:chain.id||null,usedChainIds:chain.id?[chain.id]:[],usedQuestionIds:[],recordedQuestionIds:[],roundNumber:1,roundResult:null,roundResults:[],continueReady:[],roundEndedAt:null,roundStartedAt:null,activeIndex:1,activePlayerId:null,startingPlayerIndex:0,createdAt:at,startedAt:null,matchEndsAt:null,deadlineAt:null,turnId:0,consecutiveTimeouts:0,finishedAt:null,winnerId:null,endReason:null,tieBreak:null,lastCorrect:null,messageCounter:0,recentMessageIds:[],jokerRequestIds:[],messages:[],review:[],suddenDeath:false,suddenPair:[],suddenPairNumber:0,needsQuestions:false};
 }
-
-function finishRound(match, reason, at) {
-  const [left, right] = match.players;
-  let winnerId = !left || !right || left.score === right.score ? null : left.score > right.score ? left.id : right.id;
-  let tieBreak = null;
-  if (left && right && left.score === right.score && left.score > 0 && (left.responseMs || 0) !== (right.responseMs || 0)) {
-    winnerId = (left.responseMs || 0) < (right.responseMs || 0) ? left.id : right.id;
-    tieBreak = 'speed';
-  }
-  match.roundResult = { winnerId, tieBreak, reason, scores: match.players.map(({id,score,responseMs=0}) => ({id,score,responseMs})) };
-  match.tieBreak = tieBreak;
-  match.roundEndedAt = at;
-  match.activePlayerId = null;
-  match.deadlineAt = null;
-  match.turnId += 1;
-  match.continueReady = [];
-  const winner = member(match,winnerId);
-  if (winner) winner.roundWins += 1;
-  if (winner && winner.roundWins >= 2) {
-    finishSeries(match,'series_complete',at,winnerId);
-  } else {
-    match.phase = 'round_end';
-    match.winnerId = null;
-    match.endReason = null;
-    addMessage(match,{text:winner ? `${winner.name} turu kazandı. Devam etmek için ikiniz de hazır olun.` : 'Tur berabere. Aynı tur yeni zincirle tekrar oynanacak.',at});
-  }
+export function joinMatch(m,p,now){if(old(m))return legacy.joinMatch(m,p,now);const changed=advanceTime(m,now).changed;let record;try{record=playerRecord(p);}catch{return fail('invalid_player',changed);}const existing=member(m,p.id);if(existing){existing.connected=true;existing.name=record.name;existing.avatar=record.avatar;return {ok:true,duplicate:true,changed:true};}if(m.phase!=='waiting')return fail('match_started',changed);if(m.players.length>=2)return fail('room_full',changed);m.players.push(record);message(m,{text:`${record.name} odaya katıldı.`,at:atTime(now)});return {ok:true,changed:true};}
+export function installRoundQuestions(m,chain){m.chain=cellsOf(chain);m.activeIndex=1;m.currentChainId=chain.id||null;m.needsQuestions=false;}
+export function appendQuestions(m,questions,now){if(!m.needsQuestions)return {ok:true,changed:false};const needed=m.suddenDeath?2-m.suddenPair.length:2;if(!questions||questions.length<needed){finishRound(m,'bank_exhausted',atTime(now));return {ok:false,reason:'bank_exhausted',changed:true};}const padded=[...questions,...Array.from({length:Math.max(0,6-questions.length)},()=>questions[0])];m.chain.push(...cellsOf({questions:padded}).slice(1,questions.length+1));m.needsQuestions=false;return {ok:true,changed:true};}
+export function startMatch(m,id,now){if(old(m))return legacy.startMatch(m,id,now);const changed=advanceTime(m,now).changed;if(id!==m.hostId)return fail('host_only',changed);if(m.phase!=='waiting')return fail('match_started',changed);if(m.players.length!==2)return fail('need_two_players',changed);if(m.players.some(p=>!p.connected))return fail('player_disconnected',changed);const at=atTime(now);m.phase='countdown';m.deadlineAt=at+3000;m.turnId++;message(m,{text:'Hazır olun! Karşılaşma 3 saniye sonra başlıyor.',at});return {ok:true,changed:true};}
+export function advanceTime(m,now){
+  if(old(m))return legacy.advanceTime(m,now);const at=atTime(now);let changed=false;
+  if(m.phase==='countdown'&&at>=m.deadlineAt){const start=m.deadlineAt;m.phase='playing';m.startedAt??=start;m.roundStartedAt=start;nextTurn(m,m.players[m.startingPlayerIndex].id,start);changed=true;}
+  while(m.phase==='playing'&&!m.needsQuestions&&at>=m.deadlineAt){const ended=m.deadlineAt,p=member(m,m.activePlayerId),c=m.chain[m.activeIndex];message(m,{text:`${p.name} için süre doldu.`,at:ended});if(m.suddenDeath){reviewCell(m,c,'skipped',null,ended);afterQuestion(m,ended,false,p.id);}else{m.consecutiveTimeouts++;if(m.consecutiveTimeouts>=2){reviewCell(m,c,'skipped',null,ended);afterQuestion(m,ended,false,p.id);}else nextTurn(m,other(m,p.id).id,ended);}changed=true;}
+  return {ok:true,changed};
 }
-
-export function createMatch({ roomCode, host, chain, now }) {
-  const at = validTime(now);
-  if (typeof roomCode !== 'string' || !roomCode) throw new TypeError('A room code is required.');
-  const cells = chainCells(chain);
-  const player = playerRecord(host);
-  return {
-    version: 2,
-    roomCode,
-    hostId: player.id,
-    players: [player],
-    phase: 'waiting',
-    chain: cells,
-    currentChainId: typeof chain.id === 'string' ? chain.id : null,
-    usedChainIds: typeof chain.id === 'string' ? [chain.id] : [],
-    roundNumber: 1,
-    roundResult: null,
-    continueReady: [],
-    roundEndedAt: null,
-    roundStartedAt: null,
-    activeIndex: 1,
-    activePlayerId: null,
-    startingPlayerIndex: 0,
-    createdAt: at,
-    startedAt: null,
-    matchEndsAt: null,
-    deadlineAt: null,
-    turnId: 0,
-    consecutiveTimeouts: 0,
-    finishedAt: null,
-    winnerId: null,
-    endReason: null,
-    tieBreak: null,
-    lastCorrect: null,
-    messageCounter: 0,
-    recentMessageIds: [],
-    messages: [],
-  };
+export function sendMessage(m,{playerId,text,turnId,messageId}={},now){
+  if(old(m))return legacy.sendMessage(m,{playerId,text,turnId,messageId},now);const changed=advanceTime(m,now).changed,p=member(m,playerId);if(!p)return fail('not_player',changed);if(typeof messageId!=='string'||!messageId||messageId.length>128||controls.test(messageId))return fail('invalid_message_id',changed);if(m.recentMessageIds.some(e=>e.playerId===playerId&&e.messageId===messageId))return {ok:true,duplicate:true,changed};if(m.phase!=='playing'||m.needsQuestions)return fail('not_playing',changed);if(m.activePlayerId!==playerId)return fail('not_your_turn',changed);if(turnId!==m.turnId)return fail('stale_turn',changed);if(typeof text!=='string'||controls.test(text))return fail('invalid_text',changed);const clean=text.trim().normalize('NFC');if(!clean||clean.length>160)return fail('invalid_text',changed);
+  const at=atTime(now),c=m.chain[m.activeIndex];let kind='chat';if(letters.test(clean))kind=normalizeAnswer(clean)===c.answer?'correct':'wrong';const entry=message(m,{playerId,name:p.name,text:clean,kind,at,clientMessageId:messageId});m.recentMessageIds.push({playerId,messageId});if(m.recentMessageIds.length>128)m.recentMessageIds.shift();
+  let resolution={};if(kind==='correct'){p.score+=100;p.responseMs+=Math.max(0,at-(m.deadlineAt-TURN_MS));m.lastCorrect={answer:c.answer,stem:c.stem,index:m.activeIndex,at,playerId,turnId:m.turnId};resolution={answer:c.answer,stem:c.stem,index:m.activeIndex};reviewCell(m,c,'solved',playerId,at);afterQuestion(m,at,true,playerId);}return {ok:true,changed:true,kind,correct:kind==='correct',messageId:entry.id,...resolution};
 }
-
-export function joinMatch(match, player, now) {
-  const changed = advanceTime(match, now).changed;
-  let record;
-  try { record = playerRecord(player); } catch { return failure('invalid_player', changed); }
-  const existing = member(match, record.id);
-  if (existing) {
-    const reconnected = !existing.connected || existing.name !== record.name || existing.code !== record.code;
-    existing.connected = true;
-    existing.name = record.name;
-    existing.code = record.code;
-    return { ok: true, duplicate: true, changed: changed || reconnected };
-  }
-  if (match.phase !== 'waiting') return failure('match_started', changed);
-  if (match.players.length >= 2) return failure('room_full', changed);
-  match.players.push(record);
-  addMessage(match, { text: `${record.name} odaya katıldı.`, at: validTime(now) });
-  return { ok: true, changed: true };
+export function continueRound(m,id,chain,now){
+  if(old(m))return legacy.continueRound(m,id,chain,now);const changed=advanceTime(m,now).changed;if(!member(m,id))return fail('not_player',changed);if(m.phase!=='round_end')return fail('not_round_end',changed);if(m.continueReady.includes(id))return {ok:true,duplicate:true,changed};if(m.players.some(p=>!p.connected))return fail('player_disconnected',changed);if(m.continueReady.length===1){try{cellsOf(chain);}catch{return fail('bank_exhausted',changed);}}m.continueReady.push(id);if(m.continueReady.length<2)return {ok:true,changed:true};installRoundQuestions(m,chain);m.roundNumber=1+m.players.reduce((n,p)=>n+p.roundWins,0);m.phase='countdown';m.deadlineAt=atTime(now)+3000;m.roundStartedAt=null;m.roundEndedAt=null;m.roundResult=null;m.continueReady=[];m.activePlayerId=null;m.startingPlayerIndex=1-m.startingPlayerIndex;m.consecutiveTimeouts=0;m.tieBreak=null;m.lastCorrect=null;m.messages=[];m.suddenDeath=false;m.suddenPair=[];m.suddenPairNumber=0;for(const p of m.players){p.score=0;p.responseMs=0;}m.turnId++;message(m,{text:`${m.roundNumber}. tur 3 saniye sonra başlıyor.`,at:atTime(now)});return {ok:true,changed:true};
 }
-
-export function startMatch(match, playerId, now) {
-  const changed = advanceTime(match, now).changed;
-  if (playerId !== match.hostId) return failure('host_only', changed);
-  if (match.phase !== 'waiting') return failure('match_started', changed);
-  if (match.players.length !== 2) return failure('need_two_players', changed);
-  if (match.players.some(player => !player.connected)) return failure('player_disconnected', changed);
-  const at = validTime(now);
-  match.phase = 'countdown';
-  match.deadlineAt = at + COUNTDOWN_MS;
-  match.startedAt = null;
-  match.matchEndsAt = match.deadlineAt + MATCH_MS;
-  match.turnId += 1;
-  addMessage(match, { text: 'Hazır olun! Karşılaşma 3 saniye sonra başlıyor.', at });
-  return { ok: true, changed: true };
-}
-
-export function advanceTime(match, now) {
-  const at = validTime(now);
-  let changed = upgrade(match);
-  if (match.phase === 'countdown' && at >= match.deadlineAt) {
-    const began = match.deadlineAt;
-    match.phase = 'playing';
-    match.startedAt ??= began;
-    match.roundStartedAt = began;
-    match.activePlayerId = match.players[match.startingPlayerIndex === 1 ? 1 : 0].id;
-    match.deadlineAt = began + TURN_MS;
-    match.turnId += 1;
-    changed = true;
-    addMessage(match, { text: `${member(match, match.activePlayerId).name} başlıyor. Yalnız sırası gelen oyuncu yazabilir.`, at: began });
-  }
-  // Walk deadline events chronologically. An alarm firing late never grants
-  // extra seconds, and duplicate alarms cannot repeat a timeout or a score.
-  while (match.phase === 'playing') {
-    const next = Math.min(match.deadlineAt, match.matchEndsAt);
-    if (at < next) break;
-    if (match.matchEndsAt < match.deadlineAt) {
-      finishRound(match, 'time_limit', match.matchEndsAt);
-      changed = true;
-      break;
-    }
-    const ended = match.deadlineAt;
-    const timedOut = member(match, match.activePlayerId);
-    match.consecutiveTimeouts += 1;
-    addMessage(match, { text: `${timedOut.name} için süre doldu.`, at: ended });
-    if (match.consecutiveTimeouts >= 2) {
-      const cell = match.chain[match.activeIndex];
-      cell.status = 'skipped';
-      addMessage(match, { text: `Kelime açıldı: ${cell.answer} → ${cell.stem}.`, at: ended });
-      match.activeIndex += 1;
-      match.consecutiveTimeouts = 0;
-      if (match.activeIndex >= match.chain.length) {
-        finishRound(match, 'chain_complete', ended);
-        changed = true;
-        break;
-      }
-    }
-    match.activePlayerId = opponent(match, timedOut.id).id;
-    match.deadlineAt = ended + TURN_MS;
-    match.turnId += 1;
-    changed = true;
-  }
-  return { ok: true, changed };
-}
-
-export function sendMessage(match, { playerId, text, turnId, messageId } = {}, now) {
-  const changed = advanceTime(match, now).changed;
-  const player = member(match, playerId);
-  if (!player) return failure('not_player', changed);
-  if (typeof messageId !== 'string' || !messageId || messageId.length > 128 || controls.test(messageId)) return failure('invalid_message_id', changed);
-  const prior = match.recentMessageIds.find(entry => entry.playerId === playerId && entry.messageId === messageId);
-  if (prior) return { ok: true, duplicate: true, changed };
-  if (match.phase !== 'playing') return failure('not_playing', changed);
-  if (match.activePlayerId !== playerId) return failure('not_your_turn', changed);
-  if (!Number.isInteger(turnId) || turnId !== match.turnId) return failure('stale_turn', changed);
-  if (typeof text !== 'string' || controls.test(text)) return failure('invalid_text', changed);
-  const clean = text.trim().normalize('NFC');
-  if (!clean || clean.length > MESSAGE_LIMIT) return failure('invalid_text', changed);
-  const at = validTime(now);
-  let kind = 'chat';
-  let resolution = {};
-  if (match.phase === 'playing' && match.activePlayerId === playerId && lettersOnly.test(clean)) {
-    const cell = match.chain[match.activeIndex];
-    if (normalizeAnswer(clean) === cell.answer) {
-      kind = 'correct';
-      const index = match.activeIndex;
-      cell.status = 'solved';
-      player.score += CORRECT_SCORE;
-      player.responseMs = (player.responseMs || 0) + Math.max(0, at - (match.deadlineAt - TURN_MS));
-      match.consecutiveTimeouts = 0;
-      match.lastCorrect = { answer: cell.answer, stem: cell.stem, index, at, playerId, turnId: match.turnId };
-      resolution = { answer: cell.answer, stem: cell.stem, index };
-      match.activeIndex += 1;
-    } else kind = 'wrong';
-  }
-  const message = addMessage(match, { playerId, name: player.name, text: clean, kind, at, clientMessageId: messageId });
-  match.recentMessageIds.push({ playerId, messageId });
-  if (match.recentMessageIds.length > RECENT_MESSAGE_LIMIT) match.recentMessageIds.splice(0, match.recentMessageIds.length - RECENT_MESSAGE_LIMIT);
-  if (kind === 'correct') {
-    if (match.activeIndex >= match.chain.length) finishRound(match, 'chain_complete', at);
-    else {
-      match.activePlayerId = opponent(match, playerId).id;
-      match.deadlineAt = at + TURN_MS;
-      match.turnId += 1;
-    }
-  }
-  return { ok: true, changed: true, kind, correct: kind === 'correct', messageId: message.id, ...resolution };
-}
-
-export function continueRound(match, playerId, chain, now) {
-  const changed = advanceTime(match,now).changed;
-  if (!member(match,playerId)) return failure('not_player',changed);
-  if (match.phase !== 'round_end') return failure('not_round_end',changed);
-  if (match.continueReady.includes(playerId)) return {ok:true,duplicate:true,changed};
-  if (match.players.some(player=>!player.connected)) return failure('player_disconnected',changed);
-  // Validate before accepting the second ready action. A malformed private bank
-  // must not leave a room irreversibly marked ready with no usable next round.
-  let cells;
-  if (match.continueReady.length===1) {
-    try {cells=chainCells(chain);} catch {return failure('invalid_chain',changed);}
-  }
-  match.continueReady.push(playerId);
-  if (match.continueReady.length<2) return {ok:true,changed:true};
-  match.roundNumber = 1 + match.players.reduce((sum,player)=>sum+player.roundWins,0);
-  match.chain = cells;
-  match.currentChainId = typeof chain.id === 'string' ? chain.id : null;
-  if (match.currentChainId && !match.usedChainIds.includes(match.currentChainId)) match.usedChainIds.push(match.currentChainId);
-  match.phase = 'countdown';
-  match.deadlineAt = validTime(now) + COUNTDOWN_MS;
-  match.matchEndsAt = match.deadlineAt + MATCH_MS;
-  match.roundStartedAt = null;
-  match.roundEndedAt = null;
-  match.roundResult = null;
-  match.continueReady = [];
-  match.activeIndex = 1;
-  match.activePlayerId = null;
-  match.startingPlayerIndex = match.startingPlayerIndex===1?0:1;
-  match.consecutiveTimeouts = 0;
-  match.tieBreak = null;
-  match.lastCorrect = null;
-  match.messages = [];
-  for (const player of match.players) {player.score=0;player.responseMs=0;}
-  match.turnId += 1;
-  addMessage(match,{text:`${match.roundNumber}. tur 3 saniye sonra başlıyor.`,at:validTime(now)});
-  return {ok:true,changed:true};
-}
-
-export function leaveMatch(match, playerId, now) {
-  const changed = advanceTime(match, now).changed;
-  const player = member(match, playerId);
-  if (!player) return failure('not_player', changed);
-  player.connected = false;
-  const at = validTime(now);
-  if (match.phase === 'playing' || match.phase === 'round_end' || (match.phase==='countdown' && match.startedAt!==null)) {
-    const winner = opponent(match,playerId);
-    if (winner) winner.roundWins = 2;
-    finishSeries(match, 'forfeit', at, winner?.id ?? null);
-  } else if (match.phase === 'waiting' || match.phase === 'countdown') {
-    if (playerId === match.hostId) finishSeries(match, 'room_closed', at, null);
-    else {
-      match.players = match.players.filter(item => item.id !== playerId);
-      match.phase = 'waiting';
-      match.deadlineAt = null;
-      match.startedAt = null;
-      match.matchEndsAt = null;
-      match.activePlayerId = null;
-      match.turnId += 1;
-      addMessage(match, { text: `${player.name} odadan ayrıldı.`, at });
-    }
-  }
-  return { ok: true, changed: true };
-}
-
-export function nextAlarm(match) {
-  if (match.phase === 'countdown') return match.deadlineAt;
-  if (match.phase === 'playing') return Math.min(match.deadlineAt, match.matchEndsAt);
-  return null;
-}
-
-// Projection only: callers advance and persist the authoritative state first.
-// Hidden stems are answers in disguise, so omit BOTH keys until disclosed.
-export function publicMatch(match, now) {
-  return {
-    roomCode: match.roomCode,
-    players: match.players.map(({ id, name, code, score, responseMs = 0, roundWins=0, connected }) => ({ id, name, code, score, responseMs, roundWins, connected })),
-    phase: match.phase,
-    activePlayerId: match.activePlayerId,
-    deadlineAt: match.deadlineAt,
-    serverNow: validTime(now),
-    turnId: match.turnId,
-    chain: match.chain.map(cell => cell.status === 'hidden'
-      ? { first: cell.first, length: cell.length, status: 'hidden' }
-      : { stem: cell.stem, answer: cell.answer, first: cell.stem[0], length: cell.stem.length, status: cell.status }),
-    activeIndex: match.activeIndex,
-    messages: copy(match.messages.slice(-PUBLIC_MESSAGE_LIMIT)),
-    winnerId: match.winnerId,
-    endReason: match.endReason,
-    tieBreak: match.tieBreak || null,
-    lastCorrect: match.lastCorrect ? copy(match.lastCorrect) : null,
-    roundNumber: match.roundNumber || 1,
-    roundResult: match.roundResult ? copy(match.roundResult) : null,
-    continueReady: [...(match.continueReady || [])],
-    winsToWin: 2,
-    maxRounds: 3,
-  };
+export function leaveMatch(m,id,now){if(old(m))return legacy.leaveMatch(m,id,now);const changed=advanceTime(m,now).changed,p=member(m,id);if(!p)return fail('not_player',changed);p.connected=false;const at=atTime(now);if(['playing','round_end'].includes(m.phase)||(m.phase==='countdown'&&m.startedAt!==null)){const winner=other(m,id);if(winner)winner.roundWins=2;finishSeries(m,'forfeit',at,winner?.id||null);}else if(['waiting','countdown'].includes(m.phase)){if(id===m.hostId)finishSeries(m,'room_closed',at);else{m.players=m.players.filter(p=>p.id!==id);m.phase='waiting';m.deadlineAt=null;m.activePlayerId=null;m.turnId++;}}return {ok:true,changed:true};}
+export function validateJoker(m,id,kind,turnId,requestId,now){const changed=advanceTime(m,now).changed;if(old(m))return fail('legacy_room',changed);const p=member(m,id);if(!p)return fail('not_player',changed);if(typeof requestId!=='string'||!/^[A-Za-z0-9_-]{1,128}$/.test(requestId))return fail('invalid_message_id',changed);if(m.jokerRequestIds.some(e=>e.id===id&&e.requestId===requestId))return {ok:true,duplicate:true,changed};if(!['hint','letter'].includes(kind))return fail('invalid_joker',changed);if(m.phase!=='playing'||m.needsQuestions)return fail('not_playing',changed);if(m.activePlayerId!==id)return fail('not_your_turn',changed);if(turnId!==m.turnId)return fail('stale_turn',changed);if(p.jokers[kind+'Used']>=JOKER_LIMIT[kind])return fail('joker_limit',changed);const c=m.chain[m.activeIndex];if(kind==='hint'&&c.hintOpen)return fail('hint_already_open',changed);if(kind==='letter'&&c.revealed.length>=c.length-1)return fail('all_letters_open',changed);return {ok:true,changed};}
+export function applyJoker(m,id,kind,requestId,wallet,now,random=Math.random){const p=member(m,id),c=m.chain[m.activeIndex];if(m.jokerRequestIds.some(e=>e.id===id&&e.requestId===requestId))return {ok:true,duplicate:true,changed:false};p.gold=wallet.gold;p.inventory=clone(wallet.inventory);p.jokers[kind+'Used']++;m.jokerRequestIds.push({id,requestId});if(m.jokerRequestIds.length>32)m.jokerRequestIds.shift();if(kind==='hint')c.hintOpen=true;else{const indexes=Array.from({length:c.length-1},(_,i)=>i+1).filter(i=>!c.revealed.some(r=>r.index===i));const index=indexes[Math.floor(random()*indexes.length)];c.revealed.push({index,letter:c.answer[index]});}message(m,{text:`${p.name} ${kind==='hint'?'ipucu':'harf'} jokeri kullandı.`,at:atTime(now)});return {ok:true,changed:true};}
+export function nextAlarm(m){if(old(m))return legacy.nextAlarm(m);return ['countdown','playing'].includes(m.phase)&&!m.needsQuestions?m.deadlineAt:null;}
+export function publicMatch(m,now){
+  if(old(m))return legacy.publicMatch(m,now);const c=m.phase==='playing'?m.chain[m.activeIndex]:null;
+  return {roomCode:m.roomCode,players:clone(m.players),phase:m.phase,activePlayerId:m.activePlayerId,deadlineAt:m.deadlineAt,serverNow:atTime(now),turnId:m.turnId,chain:m.chain.map(c=>c.status==='hidden'?{first:c.first,length:c.length,status:'hidden'}:{stem:c.stem,answer:c.answer,first:c.stem[0],length:c.stem.length,status:c.status}),activeIndex:m.activeIndex,messages:clone(m.messages.slice(-60)),winnerId:m.winnerId,endReason:m.endReason,tieBreak:m.tieBreak,lastCorrect:m.lastCorrect?clone(m.lastCorrect):null,roundNumber:m.roundNumber,roundResult:m.roundResult?clone(m.roundResult):null,continueReady:[...m.continueReady],winsToWin:2,maxRounds:3,questionsPerRound:6,questionNumber:m.activeIndex,suddenDeath:m.suddenDeath,suddenPairNumber:m.suddenPairNumber,question:c?{prompt:c.from,first:c.first,length:c.length,revealed:clone(c.revealed),hint:c.hintOpen?c.hint:null,newChain:m.activeIndex>1&&c.from!==m.chain[m.activeIndex-1].stem}:null,review:clone(m.review)};
 }

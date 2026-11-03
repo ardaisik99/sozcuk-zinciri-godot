@@ -8,15 +8,18 @@ Cloudflare Workers ve SQLite Durable Objects üzerinde çalışan iki oyunculu K
 - Arkadaş isteği kabul edildikten sonra oda daveti gönderilebilir. Altı karakterli oda koduyla doğrudan katılmak da mümkündür.
 - İki oyuncu hazırken ev sahibi başlatır. Üç saniyelik geri sayım sonrası, sunucunun belirlediği oyuncunun 30 saniyelik sırası başlar.
 - Aktif oyuncunun tek kelimelik mesajı tahmindir. Yanlış cevap kırmızı çizilir; oyuncu kalan sürede tekrar deneyebilir. Çok kelimeli sohbet ve aktif oyuncunun cümleleri normal sohbet olarak gösterilir; sırası gelmeyen oyuncu mesaj gönderemez. Doğru çekimli cevap yeşil tik alır, 100 puan kazandırır, kelime köküne döner ve sıra rakibe geçer.
-- Süre biterse aynı kelimede sıra rakibe geçer. Aynı kelimede iki sıra da cevapsız kalırsa kelime açılır; puan verilmez. Beş kelimelik zincir bitince veya dört dakika dolunca tur sonuçlanır. Tur puanları eşitse doğru cevaplara harcanan toplam süre kullanılır; o da eşitse tur yeni zincirle tekrarlanır. Tur sonunda iki oyuncunun Devam et onayı beklenir. İki tur kazanan, seriyi 2–0 veya 2–1 bitirir.
+- Her tur altı soru sorulur. Hepsi sırayla bilinirse skor 3–3 olur. Eşitlikte iki oyuncuya birer yeni soru ve eşit cevap hakkı veren uzatma oynanır; biri bilip diğeri bilemezse tur biter. Süreye göre kazanan belirlenmez. Normal soruda iki oyuncu da bilemezse cevap açılır. Sonuçlarda son cevap dahil öğrenilen/bilinemeyen bütün sorular görünür. İki tur kazanan seriyi 2–0 veya 2–1 bitirir.
+- Oyuncu başına maç boyunca iki ipucu ve dört harf hakkı vardır. Envanterdeki joker önce tüketilir; yoksa ipucu 15, harf 20 sunucu altınıdır. Marketten altınla joker alınabilir. Gerçek para ürünleri Play Console ve sunucu doğrulama ayarları tamamlanana kadar kapalıdır.
+- Rastgele eşleşme önce bekleyen insanları eşleştirir; 12 saniyede rakip bulunamazsa açıkça Bot yazan bir rakip gelir. Botun cevap süresi ve hata yapması değişkendir. Hesap bazında sunulan soru çiftleri kalıcı kaydedilir; iki oyuncudan birine sorulmuş çift yeniden seçilmez. Havuz biterse açık hata verilir, soru tekrarına düşülmez.
+- Son 50 maçın sonucu, rakibi ve açılmış cevapları hesap geçmişinde kalır. Oda sohbeti temizlense de geçmiş korunur. Sunucu cüzdanı 100 altınla başlar; tamamlanan serinin kazananına 60, diğer oyuncuya 30 altın verilir. Ayrılmayla biten maç ödül vermez. Yerel tek kişilik altın sunucuya aktarılmaz.
 - Bağlantı kesilmesinde 30 saniye dönüş süresi vardır. Başlamış maçtan açıkça ayrılmak rakibe galibiyet verir. Maç başlamadan oda kapanması istatistik yazmaz. Oda sohbeti 24 saat sonra temizlenir.
 
 ## Yerel test
 
-Node 24 LTS önerilir. Yeni klonda `npm ci` çalıştır. Sahibe verilen proje paketinde `private/chains.json` bulunur; bu dosya ve `.dev.vars` GitHub'a gönderilmez. Başka bir geliştirici kendi beşli zincirlerini bu biçimde oluşturabilir:
+Node 24 LTS önerilir. Yeni klonda `npm ci` çalıştır. Sahibe verilen proje paketinde `private/chains.json` bulunur; bu dosya ve `.dev.vars` GitHub'a gönderilmez. Altı veya daha fazla farklı soru çifti gerekir. Zincirler de desteklenir; soru çifti biçimi:
 
 ```json
-[{"id":"ornek","words":["ÇAY","KAŞIK","OYUN","HAVA","DURUM"],"answers":["ÇAY","KAŞIĞI","OYUNU","HAVASI","DURUMU"],"links":["Çay kaşığı","Kaşık oyunu","Oyun havası","Hava durumu"]}]
+[{"id":"ornek","prompt":"ÇAY","answer":"KAŞIĞI","stem":"KAŞIK","hint":"Yiyecekleri ağza götüren saplı araç."}]
 ```
 
 Proje kökünden:
@@ -45,7 +48,7 @@ python tools/set-online-url.py https://SUNUCU-ADRESI
 python tools/build_web.py
 ```
 
-Giriş tarayıcıdaki Cloudflare OAuth ekranından yapılır. Şifre veya erişim anahtarı kaynak koduna eklenmez. Deploy betiği testleri çalıştırır, Worker'ı yayınlar ve özel kelime bankasını `CHAIN_BANK` sunucu sırrına stdin üzerinden yükler. Banka minify edilir; tek Cloudflare metin sırrının yaklaşık 5 KB sınırını aşan bankalar ayrıca depolama tasarımı gerektirir. Mevcut 18 zincir yaklaşık 3,6 KB'dır.
+Giriş tarayıcıdaki Cloudflare OAuth ekranından yapılır. Şifre veya erişim anahtarı kaynak koduna eklenmez. Özel banka UTF-8 sınırları korunarak `CHAIN_BANK_01` … `CHAIN_BANK_32` sunucu sırlarına bölünür; sunucu bunları sıralı birleştirir. Eski küçük `CHAIN_BANK` desteklenir. Sunucu bütün cevapları saklar; istemciye yalnız açılan cevaplar gider. `LEGACY_QUESTION_IDS` eski oyuncular için bir defalık tekrar önleme geçişini sağlar.
 
 `config/online.json` gizli değildir; aynı URL hem Godot hem web tarafından kullanılır. Tarayıcı için yalnız izin verilen origin'ler `wrangler.jsonc` içindedir. Üretim hesabında Worker ve Durable Object kaynakları bu dosyadaki migration ile otomatik oluşur. Migrations daha sonra silinmemeli/değiştirilmemelidir; yeni tag eklenir.
 

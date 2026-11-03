@@ -1,4 +1,5 @@
 import {authToken,bodyJSON,digest,fail,json,newRoomCode,roomCode} from './common.mjs';
+import {billingConfigured,verifyGooglePurchase,acknowledgeGooglePurchase} from './google-billing.mjs';
 export {Directory} from './directory.mjs';
 export {GameRoom} from './room.mjs';
 
@@ -30,7 +31,7 @@ async function route(request,env) {
     const trustedGateway=Boolean(env.GATEWAY_KEY&&request.headers.get('X-Zincir-Gateway')===env.GATEWAY_KEY);
     const forwarded=request.headers.get('X-Zincir-Client');
     const ip=trustedGateway&&forwarded&&/^[0-9a-fA-F:.]{3,64}$/.test(forwarded)?forwarded:request.headers.get('CF-Connecting-IP')||'local';
-    return response(await directory.register(body.name,await digest(ip),trustedGateway?80:10));
+    return response(await directory.register(body.name,await digest(ip),trustedGateway?80:10,body.avatar));
   }
   const websocket=path.startsWith('/ws/');
   const token=websocket?url.searchParams.get('token'):authToken(request);
@@ -47,9 +48,25 @@ async function route(request,env) {
   }
   if(path==='/v1/me'&&request.method==='GET')return json({ok:true,profile,activeRoom:profile.activeRoom});
   if(path==='/v1/friends'&&request.method==='GET')return response(await directory.friends(profile.id));
+  if(path==='/v1/history'&&request.method==='GET')return response(await directory.history(profile.id));
+  if(path==='/v1/shop'&&request.method==='GET')return response(await directory.shop(profile.id,{billingEnabled:billingConfigured(env),adsEnabled:env.ADS_ENABLED==='true'}));
+  if(path==='/v1/matchmaking'&&request.method==='GET')return response(await directory.queueState(profile.id));
   if(request.method!=='POST')return fail('not_found',404);
-  const body=await bodyJSON(request);
-  if(path==='/v1/profile')return response(await directory.rename(profile.id,body.name));
+  const body=await bodyJSON(request,path==='/v1/purchases/google'?8192:2048);
+  if(path==='/v1/profile')return response(await directory.rename(profile.id,body.name||profile.name,body.avatar));
+  if(path==='/v1/shop/buy')return response(await directory.buy(profile.id,body.productId,body.requestId));
+  if(path==='/v1/shop/verify')return fail('billing_not_configured',503);
+  if(path==='/v1/purchases/google'){
+    try{
+      const verified=await verifyGooglePurchase(env,{productId:body.productId,purchaseToken:body.purchaseToken,accountId:profile.id});
+      const {accountId,productId,purchaseTokenHash,quantity,consumed}=verified;
+      const claim=await directory.claimGooglePurchase({accountId,productId,purchaseTokenHash,quantity,consumed});if(!claim.ok)return response(claim);
+      let acknowledged=false;try{acknowledged=(await acknowledgeGooglePurchase(env,verified)).ok;}catch{/* Client may retry; the committed grant is idempotent. */}
+      return json({ok:true,profile:claim.profile,productId:verified.productId,consumable:verified.consumable,acknowledged,ackPending:!acknowledged,duplicate:!!claim.duplicate});
+    }catch(error){const reason=typeof error.code==='string'&&/^[a-z_]+$/.test(error.code)?error.code:'billing_provider_unavailable';return fail(reason,reason==='billing_not_configured'?503:400);}
+  }
+  if(path==='/v1/matchmaking/join')return response(await directory.joinQueue(profile.id));
+  if(path==='/v1/matchmaking/cancel')return response(await directory.cancelQueue(profile.id));
   if(path==='/v1/friends/request')return response(await directory.requestFriend(profile.id,body.code));
   if(path==='/v1/friends/respond')return response(await directory.respondFriend(profile.id,body.userId,body.accept));
   if(path==='/v1/friends/remove')return response(await directory.removeFriend(profile.id,body.userId));
@@ -69,6 +86,7 @@ async function route(request,env) {
       catch(error){await directory.releaseRoom(profile.id,code);throw error;}
       if(result.ok)return response(result);
       await directory.releaseRoom(profile.id,code);
+      if(result.reason==='bank_exhausted')return response(result);
     }
     return fail('service_unavailable',503);
   }

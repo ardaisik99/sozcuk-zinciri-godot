@@ -1,6 +1,7 @@
 export const json = (data, status=200) => Response.json(data, {status, headers:{'Cache-Control':'no-store'}});
 export const fail = (reason,status=400) => json({ok:false,reason},status);
-export const publicProfile = row => ({id:row.id,code:String(row.code),name:row.name,wins:row.wins||0,played:row.played||0});
+export const publicProfile = row => ({id:row.id,code:String(row.code),name:row.name,avatar:row.avatar==='mascot-girl'?'mascot-girl':'mascot-boy',wins:row.wins||0,played:row.played||0});
+export const accountProfile = row => ({...publicProfile(row),gold:Number(row.gold??100),inventory:{hint:Number(row.hints||0),letter:Number(row.letters||0)},removeAds:!!row.remove_ads});
 export const randomToken = () => Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
 export async function digest(value) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),v=>v.toString(16).padStart(2,'0')).join('');
@@ -10,14 +11,14 @@ export function displayName(value) {
   const name=value.trim().normalize('NFC');
   return name.length>=2&&name.length<=18&&!/[\p{C}<>]/u.test(name)?name:null;
 }
-export async function bodyJSON(request) {
+export async function bodyJSON(request,maxBytes=2048) {
   if(!request.headers.get('content-type')?.includes('application/json'))throw new Error('invalid_body');
-  if(Number(request.headers.get('content-length'))>2048)throw new Error('message_too_long');
+  if(Number(request.headers.get('content-length'))>maxBytes)throw new Error('message_too_long');
   const reader=request.body?.getReader(),chunks=[];let size=0;
   if(reader)while(true){
     const {done,value}=await reader.read();if(done)break;
     size+=value.byteLength;
-    if(size>2048){await reader.cancel();throw new Error('message_too_long');}
+    if(size>maxBytes){await reader.cancel();throw new Error('message_too_long');}
     chunks.push(value);
   }
   const bytes=new Uint8Array(size);let offset=0;

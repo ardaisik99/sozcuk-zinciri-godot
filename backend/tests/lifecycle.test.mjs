@@ -102,13 +102,23 @@ function sqliteDirectory(t) {
   return directory;
 }
 
-async function fixture(t, { playing = false, reportFailure = null } = {}) {
+async function fixture(t, { playing = false, reportFailure = null,jokerFailure=null } = {}) {
   const clock = { now: BASE };
   t.mock.method(Date, 'now', () => clock.now);
   const directory = sqliteDirectory(t);
   const reportCalls = [];
   const releases = [];
+  let jokerCalls=0;
   const rpc = {
+    seenQuestions:(...args)=>directory.seenQuestions(...args),
+    markQuestions:(...args)=>directory.markQuestions(...args),
+    chargeJoker:(...args)=>{
+      jokerCalls++;
+      if(jokerFailure==='before-commit'&&jokerCalls===1)throw new Error('Debit temporarily unavailable');
+      const result=directory.chargeJoker(...args);
+      if(jokerFailure==='after-commit'&&jokerCalls===1)throw new Error('Debit acknowledgement lost');
+      return result;
+    },
     reserveRoom: (...args) => directory.reserveRoom(...args),
     releaseRoom: (...args) => { releases.push(args); return directory.releaseRoom(...args); },
     finishMatch: (...args) => {
@@ -174,6 +184,27 @@ test('a connected waiting host expires once at ten minutes and never enters an i
   assert.ok(f.context.alarmAt > f.clock.now + 60_000, 'A finished waiting room must not schedule now+5ms repeatedly.');
 });
 
+for(const loss of ['before-commit','after-commit'])test(`pending joker survives ${loss} failure and actor restart without a second charge`,async t=>{
+  const f=await fixture(t,{playing:true,jokerFailure:loss});
+  const id=f.room.match.activePlayerId,socket=id===host.id?f.hostSocket:f.guestSocket;
+  const command={type:'joker',kind:'letter',requestId:'durable-joker',turnId:f.room.match.turnId};
+  await assert.rejects(()=>f.room.webSocketMessage(socket,JSON.stringify(command)));
+  const persisted=await f.context.storage.get('match');
+  assert.equal(persisted.pendingJoker.requestId,'durable-joker');
+  assert.equal(persisted.chain[persisted.activeIndex].revealed.length,0);
+  assert.equal(f.directory.wallet(id).gold,loss==='after-commit'?80:100);
+  const replacement=new GameRoom(f.context,f.env);await f.context.ready;f.clock.now+=20;
+  await replacement.alarm();
+  assert.equal(f.directory.wallet(id).gold,80);
+  assert.equal(replacement.match.chain[replacement.match.activeIndex].revealed.length,1);
+  assert.equal(replacement.match.players.find(p=>p.id===id).jokers.letterUsed,1);
+  assert.equal((await f.context.storage.get('match')).pendingJoker,null);
+  await replacement.webSocketMessage(socket,JSON.stringify(command));
+  assert.equal(f.directory.wallet(id).gold,80);
+  assert.equal(replacement.match.players.find(p=>p.id===id).jokers.letterUsed,1);
+  assert.equal(socket.sent.some(raw=>JSON.parse(raw).state?.question?.revealed?.length===1),true);
+});
+
 test('a delayed alarm applies disconnect grace at its original cutoff before later timeout skips', async t => {
   const f = await fixture(t, { playing: true });
   const playStart = f.clock.now;
@@ -186,7 +217,8 @@ test('a delayed alarm applies disconnect grace at its original cutoff before lat
   assert.equal(f.room.match.winnerId, guest.id);
   assert.equal(f.room.match.finishedAt, playStart + GRACE);
   assert.equal(f.room.match.activeIndex, 1, 'A late callback must not reveal four words before honoring the earlier disconnect.');
-  assert.equal(f.room.match.chain.slice(1).every(cell => cell.status === 'hidden'), true);
+  assert.equal(f.room.match.chain[1].status, 'unanswered', 'The active unanswered question is revealed when a player forfeits.');
+  assert.equal(f.room.match.chain.slice(2).every(cell => cell.status === 'hidden'), true, 'Queued future answers must stay private.');
   assert.equal(profile(f.directory, host.id).played, 1);
   assert.equal(profile(f.directory, guest.id).wins, 1);
   assert.equal(f.reportCalls.length, 1);

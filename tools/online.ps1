@@ -28,8 +28,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Online sunucu testleri başarısız.' }
     & npx wrangler deploy
     if ($LASTEXITCODE -ne 0) { throw 'Cloudflare sunucusu yayınlanamadı.' }
-    $taskCompactBank=ConvertTo-Json -InputObject (ConvertFrom-Json $taskBankJson) -Depth 10 -Compress
-    $taskCompactBank | & npx wrangler secret put CHAIN_BANK
+    & python (Join-Path $taskRoot 'tools\pack_private_bank.py')
+    if ($LASTEXITCODE -ne 0) { throw 'Gizli soru bankası paketlenemedi.' }
+    & npx wrangler secret bulk (Join-Path $taskBackend 'private\secrets-bank.json')
     if ($LASTEXITCODE -ne 0) { throw 'Gizli zincir bankası yüklenemedi.' }
     Write-Output 'Sunucu ve gizli zincir bankası hazır. Yazdırılan workers.dev adresini python tools/set-online-url.py ile ortak config dosyasına kaydet; ardından python tools/build_web.py çalıştır.'
 } finally { Pop-Location }

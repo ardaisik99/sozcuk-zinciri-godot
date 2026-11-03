@@ -46,6 +46,7 @@ export class ZincirState {
 
   _defaults() {
     this.profileName = '';
+    this.profileAvatar = 'mascot-boy';
     this.gold = START_GOLD;
     this.score = 0;
     this.completed = [];
@@ -62,6 +63,13 @@ export class ZincirState {
     const name = String(value ?? '').trim();
     if (name.length < 2 || name.length > 18 || /[\u0000-\u001f\u007f]/u.test(name)) return false;
     this.profileName = name;
+    this.saveLocal();
+    return true;
+  }
+
+  setAvatar(value) {
+    if (!['mascot-boy', 'mascot-girl'].includes(value)) return false;
+    this.profileAvatar = value;
     this.saveLocal();
     return true;
   }
@@ -186,7 +194,7 @@ export class ZincirState {
   saveLocal() {
     this._storeCurrent();
     if (!this.storage) { this.lastSaveOk = false; return false; }
-    const record = JSON.stringify({ version: 1, profileName: this.profileName, gold: this.gold,
+    const record = JSON.stringify({ version: 1, profileName: this.profileName, profileAvatar: this.profileAvatar, gold: this.gold,
       score: this.score, completed: this.completed, tutorialDone: this.tutorialDone,
       settings: this.settings, progress: this.progress });
     try {
@@ -217,6 +225,7 @@ export class ZincirState {
     this.revealed = {};
     this.hintUsed = {};
     this.profileName = String(data.profileName ?? '').trim().slice(0, 18);
+    this.profileAvatar = data.profileAvatar === 'mascot-girl' ? 'mascot-girl' : 'mascot-boy';
     this.gold = integer(data.gold, START_GOLD);
     this.score = integer(data.score);
     this.tutorialDone = data.tutorialDone === true;

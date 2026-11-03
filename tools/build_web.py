@@ -39,9 +39,11 @@ for name in ['.gdignore', '.nojekyll']:
 shutil.copy2(ROOT / 'data/levels.json', DEST / 'data/levels.json')
 (DEST / 'assets/fonts').mkdir(parents=True, exist_ok=True)
 (DEST / 'assets/icons').mkdir(parents=True, exist_ok=True)
-for name in ['mascot-editorial.webp', 'mascot-editorial-icon.png']:
+for name in ['mascot-editorial.webp', 'mascot-editorial-icon.png',
+             'app-logo.webp', 'app-logo-icon.png', 'mascot-boy.webp', 'mascot-girl.webp',
+             'mascot-teacher.webp', 'mascot-celebrate.webp']:
     shutil.copy2(ROOT / 'assets' / name, DEST / 'assets' / name)
-for name in ['hero.webp', 'mascot.webp', 'mascot-icon.png', 'mascot-think.webp',
+for name in ['app-logo.png', 'hero.webp', 'mascot.webp', 'mascot-icon.png', 'mascot-think.webp',
              'mascot-cheer.webp', 'mascot-run.webp']:
     target = (DEST / 'assets' / name).resolve()
     assert target.parent == (DEST / 'assets').resolve()

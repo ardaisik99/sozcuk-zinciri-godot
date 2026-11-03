@@ -115,10 +115,12 @@ func _run() -> void:
 	app._accept_profile()
 	check(app.screen == "profile", "Empty profile should remain on profile screen.")
 	app.profile_input.text = "Gökçen"
+	app._choose_avatar("mascot-girl")
 	app._accept_profile()
 	await settle()
 	check(app.screen == "game" and app.state.current_level.id == "tutorial", "Accepting name should start tutorial.")
 	check(app.state.profile_name == "Gökçen", "UI should save Turkish profile name.")
+	check(app.state.profile_avatar == "mascot-girl" and State.new(TEST_PATH).profile_avatar == "mascot-girl", "Selected mascot should survive a saved profile reload.")
 	check_layout("390 tutorial")
 	check(app.active_row.word == "KAŞIĞI" and app.active_row.cells.size() == 6, "Tutorial should request the six-letter inflected answer KAŞIĞI.")
 	var initial_gold = app.state.gold
@@ -146,7 +148,15 @@ func _run() -> void:
 	await settle()
 	check(app.screen == "home", "Tutorial completion button should enter home.")
 	var brand_mascot = app.stage.find_child("BrandMascot", true, false)
-	check(is_instance_valid(brand_mascot) and brand_mascot.texture.resource_path == "res://assets/mascot-editorial.png", "The main topbar brand should use the same static newspaper mascot.")
+	var expected_avatar = "res://assets/mascot-girl.png" if ResourceLoader.exists("res://assets/mascot-girl.png") else "res://assets/mascot-editorial.png"
+	check(is_instance_valid(brand_mascot) and brand_mascot.texture.resource_path == expected_avatar, "The main topbar must display the selected player mascot.")
+	check(find_button("ARKADAŞ EKLE") != null and find_button("MAÇ GEÇMİŞİ") != null and find_button("MARKET") != null, "Friends, match history and shop should be reachable from home.")
+	app._show_profile(true)
+	app._choose_avatar("mascot-boy")
+	app.profile_input.text = "Gökçen"
+	app._accept_profile()
+	await settle()
+	check(app.screen == "home" and app.state.profile_avatar == "mascot-boy" and app.state.tutorial_done, "Existing players can change mascot without repeating tutorial or resetting progress.")
 	check_layout("390 home")
 	app._show_levels()
 	await settle()

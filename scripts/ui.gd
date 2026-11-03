@@ -149,3 +149,14 @@ static func progress(value: float, color: Color = TEAL, height: int = 10) -> Pro
 	p.add_theme_stylebox_override("background", bg)
 	p.add_theme_stylebox_override("fill", fill)
 	return p
+
+
+static func mascot(variant: String = "mascot-boy", height: int = 72) -> TextureRect:
+	var image = TextureRect.new()
+	var path = "res://assets/%s.png" % variant
+	image.texture = load(path if ResourceLoader.exists(path) else "res://assets/mascot-editorial.png")
+	image.custom_minimum_size = Vector2(height, height)
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return image
